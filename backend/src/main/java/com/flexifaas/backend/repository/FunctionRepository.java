@@ -11,6 +11,4 @@ public interface FunctionRepository extends JpaRepository<Function, Long> {
     List<Function> findByOwner(User owner);
     List<Function> findByName(String name);
     List<Function> findByStatus(String status);
-
-
 }

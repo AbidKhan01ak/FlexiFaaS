@@ -113,10 +113,6 @@ public class FunctionController {
         }
     }
 
-    /**
-     * Execute a function asynchronously. Returns immediately with status "QUEUED".
-     * Actual execution/result/log can be fetched later using logs or job tracking APIs.
-     */
     @PostMapping("/execute")
     public ResponseEntity<FunctionExecutionResponse> executeFunction(@RequestBody FunctionExecutionRequest request) {
         FunctionExecutionResponse response = functionService.executeFunction(
