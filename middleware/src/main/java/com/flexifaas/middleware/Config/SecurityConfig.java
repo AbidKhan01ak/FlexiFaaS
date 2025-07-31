@@ -43,7 +43,8 @@ public class SecurityConfig {
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()   // Registration & Login public
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/users/me").hasAnyRole("ADMIN", "USER")// Registration & Login public
                         .requestMatchers("/api/users/**").hasRole("ADMIN") // Admin endpoints
                         .anyRequest().authenticated()
                 );
