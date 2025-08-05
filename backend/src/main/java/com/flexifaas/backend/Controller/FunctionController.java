@@ -1,12 +1,12 @@
 package com.flexifaas.backend.Controller;
 
-import com.flexifaas.backend.DTO.FunctionDTO;
-import com.flexifaas.backend.DTO.FunctionExecutionRequest;
-import com.flexifaas.backend.DTO.FunctionExecutionResponse;
-import com.flexifaas.backend.DTO.FunctionUploadRequest;
+import com.flexifaas.backend.Controller.utils.ScanForMalware;
+import com.flexifaas.backend.DTO.*;
 import com.flexifaas.backend.Service.FunctionService;
+import com.flexifaas.backend.Util.MiddlewareCryptoClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,30 +19,52 @@ import java.util.List;
 public class FunctionController {
 
     private final FunctionService functionService;
+    private final ScanForMalware scan;
 
     @Value("${app.uploads-dir}")
     private String uploadsDir;
 
     @Autowired
-    public FunctionController(FunctionService functionService){
+    public FunctionController(FunctionService functionService, ScanForMalware scan){
         this.functionService = functionService;
+        this.scan = scan;
     }
 
     // Upload new function (metadata + file)
     @PostMapping("/upload")
-    public ResponseEntity<FunctionDTO> uploadFunction(
+    public ResponseEntity<?> uploadFunction(
             @RequestParam("file") MultipartFile file,
             @ModelAttribute FunctionUploadRequest request,
             @RequestParam("userId") Long userId
     ) {
-        String fileName = file.getOriginalFilename();
-        FunctionDTO dto = new FunctionDTO();
-        dto.setName(request.getName());
-        dto.setRuntime(request.getRuntime());
-        dto.setDescription(request.getDescription());
+        try {
+            boolean clean = scan.scanForMalware(file);
+            if (!clean) {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(
+                                new MalwareScanResponse(false, "Malware detected in file. Upload rejected.")
+                        ); // or return a custom DTO with error message
+            }
+            byte[] encryptedBytes = MiddlewareCryptoClient.encryptFile(file);
+            String encryptedFileName = file.getOriginalFilename() + ".enc";
 
-        FunctionDTO saved = functionService.uploadFunction(dto, userId, fileName);
-        return ResponseEntity.ok(saved);
+            // Save encrypted bytes to disk
+            java.nio.file.Files.createDirectories(java.nio.file.Paths.get(uploadsDir));
+            java.nio.file.Path filePath = java.nio.file.Paths.get(uploadsDir, encryptedFileName);
+            java.nio.file.Files.write(filePath, encryptedBytes);
+
+            FunctionDTO dto = new FunctionDTO();
+            dto.setName(request.getName());
+            dto.setRuntime(request.getRuntime());
+            dto.setDescription(request.getDescription());
+
+            FunctionDTO saved = functionService.uploadFunction(dto, userId, encryptedFileName);
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
+        }
     }
 
     // Get function by ID
@@ -96,12 +118,25 @@ public class FunctionController {
             @RequestParam("userId") Long userId
     ) {
         try {
-            // Save the pasted code as a file on the server
-            String fileName = saveCodeToFileOnServer(code, name, runtime, userId);
+            String encryptedCode = MiddlewareCryptoClient.encryptCode(code);
+
+            // Choose file extension based on runtime
+            String ext = runtime.equalsIgnoreCase("python") ? ".py.enc" :
+                    runtime.equalsIgnoreCase("js") ? ".js.enc" :
+                            runtime.equalsIgnoreCase("java") ? ".java.enc" : ".txt.enc";
+
+            // Sanitize file name
+            String fileName = "user" + userId + "_" + name.replaceAll("[^a-zA-Z0-9]", "_") + ext;
+
+            java.nio.file.Files.createDirectories(java.nio.file.Paths.get(uploadsDir));
+            java.nio.file.Path filePath = java.nio.file.Paths.get(uploadsDir, fileName);
+            java.nio.file.Files.writeString(filePath, encryptedCode);
+
             FunctionDTO dto = new FunctionDTO();
             dto.setName(name);
             dto.setRuntime(runtime);
             dto.setDescription(description);
+
             FunctionDTO saved = functionService.uploadFunction(dto, userId, fileName);
             if (saved == null) {
                 return ResponseEntity.badRequest().body(null);
@@ -121,22 +156,5 @@ public class FunctionController {
                 request.getInputPayload()
         );
         return ResponseEntity.ok(response);
-    }
-
-
-    private String saveCodeToFileOnServer(String code, String name, String runtime, Long userId) throws IOException {
-        // Choose file extension based on runtime
-        String ext = runtime.equalsIgnoreCase("python") ? ".py" :
-                runtime.equalsIgnoreCase("js") ? ".js" :
-                        runtime.equalsIgnoreCase("java") ? ".java" : ".txt";
-
-        // Sanitize file name
-        String fileName = "user" + userId + "_" + name.replaceAll("[^a-zA-Z0-9]", "_") + ext;
-
-        java.nio.file.Files.createDirectories(java.nio.file.Paths.get(uploadsDir));
-        java.nio.file.Path filePath = java.nio.file.Paths.get(uploadsDir, fileName);
-
-        java.nio.file.Files.writeString(filePath, code);
-        return fileName;
     }
 }

@@ -24,3 +24,5 @@ jwt:
   secret: 'HcpNsUJJw/uZH/r6FwPqO0auu3HVUACsOazKv79YYA55llDAD2+FtbPsl2DtjSWACh/IG+XwNTBq2ybbt228cg=='
 
 
+encryption:
+  aes-key: "/+ZO8xctu4YbZQIdPNT6rxFXbwTwEFvcixQ8BNyzmNQ="  # Use output from generateRandomBase64Key()

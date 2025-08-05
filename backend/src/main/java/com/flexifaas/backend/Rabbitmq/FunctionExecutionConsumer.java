@@ -4,6 +4,7 @@ import com.flexifaas.backend.DTO.FunctionExecutionRequest;
 import com.flexifaas.backend.Model.ExecutionLog;
 import com.flexifaas.backend.Model.Function;
 import com.flexifaas.backend.Model.User;
+import com.flexifaas.backend.Util.MiddlewareCryptoClient;
 import com.flexifaas.backend.repository.ExecutionLogRepository;
 import com.flexifaas.backend.repository.FunctionRepository;
 import com.flexifaas.backend.repository.UserRepository;
@@ -33,21 +34,39 @@ public class FunctionExecutionConsumer {
         Function function = functionRepository.findById(functionId).orElse(null);
         User user = userRepository.findById(userId).orElse(null);
 
-        String filePath = function != null ? function.getFilePath() : null;
+        String encryptedFilePath  = function != null ? function.getFilePath() : null;
         String runtime = function != null ? function.getRuntime().toLowerCase() : null;
         String output = null;
         String error = null;
         String status = "SUCCESS";
         Timestamp execTime = new Timestamp(System.currentTimeMillis());
+        File decryptedTempFile = null;
 
         try {
+            // DECRYPT THE FILE FIRST using middleware
+            assert encryptedFilePath != null;
+            File encryptedFile = new File(encryptedFilePath);
+            byte[] decryptedBytes = MiddlewareCryptoClient.decryptFile(encryptedFile);
+
+            // Save decrypted content to a temporary file
+            String fileSuffix = encryptedFilePath.endsWith(".enc")
+                    ? encryptedFilePath.substring(0, encryptedFilePath.length() - 4) // remove ".enc"
+                    : encryptedFilePath;
+            decryptedTempFile = File.createTempFile("decrypted_", "_" + new File(fileSuffix).getName());
+
+            try (FileOutputStream fos = new FileOutputStream(decryptedTempFile)) {
+                fos.write(decryptedBytes);
+            }
+
+            // Use decryptedTempFile.getAbsolutePath() as the code file for execution
             ProcessBuilder pb;
             if ("python".equals(runtime)) {
-                pb = new ProcessBuilder("python", filePath);
+                pb = new ProcessBuilder("python", decryptedTempFile.getAbsolutePath());
             } else if ("js".equals(runtime) || "javascript".equals(runtime)) {
-                pb = new ProcessBuilder("node", filePath);
+                pb = new ProcessBuilder("node", decryptedTempFile.getAbsolutePath());
             } else if ("java".equals(runtime)) {
-                File javaFile = new File(filePath);
+                File javaFile;
+                javaFile = decryptedTempFile;
                 String fileDir = javaFile.getParent();
                 String className = javaFile.getName().replace(".java", "");
 
