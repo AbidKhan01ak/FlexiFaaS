@@ -1,68 +1,107 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
+@layer base {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    /* FlexiFaaS Sky Blue Theme */
+    --background: 213 100% 98%; /* #FAFBFC offwhite */
+    --foreground: 213 16% 16%; /* Dark text for readability */
+
+    --card: 0 0% 100%; /* Pure white for cards */
+    --card-foreground: 213 16% 16%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 213 16% 16%;
+
+    --primary: 213 97% 56%; /* #2988F9 main sky blue */
+    --primary-foreground: 0 0% 100%; /* White text on blue */
+    --primary-light: 213 93% 71%; /* #73B6FA lighter blue */
+    --primary-lighter: 213 100% 92%; /* #D6ECFF very light blue */
+
+    --secondary: 213 100% 92%; /* #D6ECFF light blue for secondary elements */
+    --secondary-foreground: 213 97% 36%; /* Darker blue text */
+
+    --muted: 213 50% 95%; /* Very light blue-gray */
+    --muted-foreground: 213 16% 46%; /* Medium gray text */
+
+    --accent: 213 93% 71%; /* #73B6FA accent color */
+    --accent-foreground: 213 97% 36%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 213 30% 88%; /* Light border with blue tint */
+    --input: 213 30% 88%;
+    --ring: 213 97% 56%; /* Primary blue for focus rings */
+
+    --radius: 0.75rem; /* More rounded corners */
+
+    --sidebar-background: 0 0% 100%; /* White sidebar */
+    --sidebar-foreground: 213 16% 26%;
+    --sidebar-primary: 213 97% 56%; /* Primary blue */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 213 100% 96%; /* Very light blue accent */
+    --sidebar-accent-foreground: 213 16% 26%;
+    --sidebar-border: 213 30% 90%;
+    --sidebar-ring: 213 97% 56%;
+
+    /* Custom gradients and shadows */
+    --gradient-primary: linear-gradient(135deg, hsl(213 97% 56%), hsl(213 93% 71%));
+    --gradient-subtle: linear-gradient(180deg, hsl(213 100% 98%), hsl(213 100% 95%));
+    --shadow-elegant: 0 8px 25px -8px hsl(213 97% 56% / 0.2);
+    --shadow-card: 0 4px 15px -4px hsl(213 50% 80% / 0.15);
   }
-  a:hover {
-    color: #747bff;
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
-  button {
-    background-color: #f9f9f9;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
   }
 }
