@@ -31,7 +31,11 @@ public class UserServiceImpl implements UserService {
         User user = new User();
         user.setUsername(userDTO.getUsername());
         user.setEmail(userDTO.getEmail());
-        user.setRole(userDTO.getRole());
+        if (userDTO.getRole() == null) {
+            user.setRole("ROLE_USER"); // or whatever your enum/column expects
+        } else {
+            user.setRole(userDTO.getRole());
+        }
         user.setCreatedAt(new Timestamp(System.currentTimeMillis()));
         user.setStatus("ACTIVE");
         user.setPasswordHash(passwordEncoder.encode(rawPassword));

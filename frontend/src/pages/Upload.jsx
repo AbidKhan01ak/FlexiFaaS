@@ -6,19 +6,15 @@ import { Textarea } from "../components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Progress } from "../components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Upload as UploadIcon, File, CheckCircle, AlertCircle } from "lucide-react";
+import { Upload as UploadIcon, File, CheckCircle, AlertCircle, Code } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 
 const runtimes = [
-  { value: "nodejs18", label: "Node.js 18" },
-  { value: "nodejs20", label: "Node.js 20" },
-  { value: "python39", label: "Python 3.9" },
-  { value: "python310", label: "Python 3.10" },
-  { value: "python311", label: "Python 3.11" },
-  { value: "go119", label: "Go 1.19" },
-  { value: "java11", label: "Java 11" },
-  { value: "dotnet6", label: ".NET 6" },
+  { value: "java", label: "Java" },
+  { value: "python", label: "Python" },
+  { value: "javascript", label: "JavaScript" },
 ];
 
 export default function Upload() {
@@ -27,11 +23,13 @@ export default function Upload() {
     runtime: "",
     description: "",
     commandLineArgs: "",
+    code: "",
   });
   const [file, setFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadMode, setUploadMode] = useState("file");
   const { toast } = useToast();
 
   const handleChange = (e) => {
@@ -81,7 +79,7 @@ export default function Upload() {
             description: `Function "${formData.name}" has been uploaded successfully.`,
           });
           // Reset form
-          setFormData({ name: "", runtime: "", description: "", commandLineArgs: "" });
+          setFormData({ name: "", runtime: "", description: "", commandLineArgs: "", code: "" });
           setFile(null);
           return 100;
         }
@@ -93,10 +91,19 @@ export default function Upload() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!file) {
+    if (uploadMode === "file" && !file) {
       toast({
         title: "No file selected",
         description: "Please select a file to upload.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (uploadMode === "code" && !formData.code.trim()) {
+      toast({
+        title: "No code provided",
+        description: "Please write your function code.",
         variant: "destructive",
       });
       return;
@@ -107,18 +114,12 @@ export default function Upload() {
 
   const getFileIcon = () => {
     if (!file) return <UploadIcon className="h-8 w-8 text-muted-foreground" />;
-
     const fileType = file.name.split('.').pop()?.toLowerCase();
     switch (fileType) {
       case 'js':
-      case 'ts':
-      case 'jsx':
-      case 'tsx':
         return <File className="h-8 w-8 text-yellow-500" />;
       case 'py':
         return <File className="h-8 w-8 text-green-500" />;
-      case 'go':
-        return <File className="h-8 w-8 text-blue-500" />;
       case 'java':
         return <File className="h-8 w-8 text-red-500" />;
       default:
@@ -147,54 +148,89 @@ export default function Upload() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* File Upload Area */}
+              {/* Upload Mode Selection */}
               <div className="space-y-2">
-                <Label>Function File</Label>
-                <div
-                  className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all ${
-                    dragActive
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                >
-                  <input
-                    type="file"
-                    onChange={handleFileSelect}
-                    accept=".js,.ts,.py,.go,.java,.zip,.tar.gz"
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  <div className="flex flex-col items-center gap-4">
-                    {getFileIcon()}
-                    {file ? (
-                      <div className="text-center">
-                        <p className="font-medium text-foreground">{file.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {(file.size / 1024).toFixed(1)} KB
-                        </p>
-                        <div className="flex items-center justify-center gap-1 mt-2 text-green-600">
-                          <CheckCircle className="h-4 w-4" />
-                          <span className="text-sm">File selected</span>
-                        </div>
+                <Label>Upload Method</Label>
+                <Tabs value={uploadMode} onValueChange={(value) => setUploadMode(value)}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="file" className="flex items-center gap-2">
+                      <UploadIcon className="h-4 w-4" />
+                      Upload File
+                    </TabsTrigger>
+                    <TabsTrigger value="code" className="flex items-center gap-2">
+                      <Code className="h-4 w-4" />
+                      Write Code
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="file" className="space-y-4 mt-4">
+                    <div
+                      className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all ${
+                        dragActive
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                      onDragEnter={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDragOver={handleDrag}
+                      onDrop={handleDrop}
+                    >
+                      <input
+                        type="file"
+                        onChange={handleFileSelect}
+                        accept=".js,.ts,.py,.go,.java,.zip,.tar.gz"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <div className="flex flex-col items-center gap-4">
+                        {getFileIcon()}
+                        {file ? (
+                          <div className="text-center">
+                            <p className="font-medium text-foreground">{file.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {(file.size / 1024).toFixed(1)} KB
+                            </p>
+                            <div className="flex items-center justify-center gap-1 mt-2 text-green-600">
+                              <CheckCircle className="h-4 w-4" />
+                              <span className="text-sm">File selected</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <p className="text-lg font-medium text-foreground">
+                              Drag & drop your function file here
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              or click to browse files
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Supports: .js, .ts, .py, .go, .java, .zip, .tar.gz (max 10MB)
+                            </p>
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="text-center">
-                        <p className="text-lg font-medium text-foreground">
-                          Drag & drop your function file here
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          or click to browse files
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Supports: .js, .ts, .py, .go, .java, .zip, .tar.gz (max 10MB)
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="code" className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="code">Function Code</Label>
+                      <Textarea
+                        id="code"
+                        name="code"
+                        placeholder={`// Write your function code here...
+export function handler(event, context) {
+  // Your function logic
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ message: 'Hello from FlexiFaaS!' })
+  };
+}`}
+                        value={formData.code}
+                        onChange={handleChange}
+                        rows={12}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
 
               {/* Function Name */}
@@ -282,7 +318,7 @@ export default function Upload() {
               <Button
                 type="submit"
                 className="w-full bg-gradient-primary hover:opacity-90 transition-opacity shadow-elegant"
-                disabled={uploading || !file || !formData.name || !formData.runtime}
+                disabled={uploading || (uploadMode === "file" ? !file : !formData.code.trim()) || !formData.name || !formData.runtime}
               >
                 {uploading ? "Uploading..." : "Upload Function"}
               </Button>

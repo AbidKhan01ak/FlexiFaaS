@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -8,24 +8,41 @@ import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { AppLayout } from "../components/layout/AppLayout";
 import { User, Mail, Shield, Calendar, Edit2, Save, X } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
-
-const userProfile = {
-  username: "johndoe",
-  email: "john.doe@example.com",
-  role: "Developer",
-  status: "Active",
-  joinDate: "January 2024",
-  functionsUploaded: 12,
-  totalExecutions: 156,
-};
+import { api } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function Profile() {
+  const { user, token } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    username: userProfile.username,
-    email: userProfile.email,
-  });
+  const [profile, setProfile] = useState(null);
+  const [formData, setFormData] = useState({ username: "", email: "" });
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        setLoading(true);
+        // Get current user profile from backend
+        const data = await api.get("/api/users/me");
+        setProfile(data);
+        setFormData({
+          username: data.username || "",
+          email: data.email || "",
+        });
+      } catch (err) {
+        toast({
+          title: "Failed to load profile",
+          description: err?.response?.data?.message || "Error fetching user info",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProfile();
+    // eslint-disable-next-line
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -34,21 +51,67 @@ export default function Profile() {
     });
   };
 
-  const handleSave = () => {
-    toast({
-      title: "Profile updated",
-      description: "Your profile has been successfully updated.",
-    });
-    setIsEditing(false);
+  // Saving/updating profile logic (update as needed)
+  const handleSave = async () => {
+    try {
+      // You can update this endpoint to your backend's update profile logic
+      // For now, just set local state (no backend PATCH/PUT logic yet)
+      setProfile((prev) => ({
+        ...prev,
+        username: formData.username,
+        email: formData.email,
+      }));
+      toast({
+        title: "Profile updated",
+        description: "Your profile info was updated locally.",
+      });
+      setIsEditing(false);
+    } catch (err) {
+      toast({
+        title: "Update failed",
+        description: err?.response?.data?.message || "Could not update profile.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCancel = () => {
     setFormData({
-      username: userProfile.username,
-      email: userProfile.email,
+      username: profile.username,
+      email: profile.email,
     });
     setIsEditing(false);
   };
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <span className="text-muted-foreground">Loading profile...</span>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <span className="text-destructive">Failed to load profile.</span>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Stats: Replace with real data if you have endpoints for these!
+  const functionsUploaded = 12;
+  const totalExecutions = 156;
+  const successRate = "99.2%";
+
+  // Join date, if available
+  const joinDate = profile.createdAt
+    ? new Date(profile.createdAt).toLocaleDateString()
+    : "N/A";
 
   return (
     <AppLayout>
@@ -56,7 +119,9 @@ export default function Profile() {
         {/* Header */}
         <div className="text-center">
           <h1 className="text-3xl font-bold text-foreground">User Profile</h1>
-          <p className="text-muted-foreground mt-2">Manage your account settings and information</p>
+          <p className="text-muted-foreground mt-2">
+            Manage your account settings and information
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -79,11 +144,7 @@ export default function Profile() {
                   </Button>
                 ) : (
                   <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCancel}
-                    >
+                    <Button variant="outline" size="sm" onClick={handleCancel}>
                       <X className="h-4 w-4 mr-2" />
                       Cancel
                     </Button>
@@ -106,18 +167,20 @@ export default function Profile() {
               <div className="flex items-center gap-6">
                 <Avatar className="h-20 w-20">
                   <AvatarFallback className="bg-gradient-primary text-white text-2xl font-bold">
-                    {userProfile.username.charAt(0).toUpperCase()}
+                    {profile.username.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-xl font-semibold text-foreground">{userProfile.username}</h3>
-                  <p className="text-muted-foreground">{userProfile.email}</p>
+                  <h3 className="text-xl font-semibold text-foreground">
+                    {profile.username}
+                  </h3>
+                  <p className="text-muted-foreground">{profile.email}</p>
                   <div className="flex items-center gap-2 mt-2">
                     <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/10">
-                      {userProfile.role}
+                      {profile.role || "User"}
                     </Badge>
                     <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">
-                      {userProfile.status}
+                      {profile.status || "Active"}
                     </Badge>
                   </div>
                 </div>
@@ -161,7 +224,7 @@ export default function Profile() {
                   <Label>Role</Label>
                   <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md">
                     <Shield className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{userProfile.role}</span>
+                    <span className="text-sm">{profile.role || "User"}</span>
                   </div>
                 </div>
 
@@ -169,7 +232,7 @@ export default function Profile() {
                   <Label>Member Since</Label>
                   <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{userProfile.joinDate}</span>
+                    <span className="text-sm">{joinDate}</span>
                   </div>
                 </div>
               </div>
@@ -184,17 +247,17 @@ export default function Profile() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center p-4 bg-primary/5 rounded-lg">
-                <div className="text-2xl font-bold text-primary">{userProfile.functionsUploaded}</div>
+                <div className="text-2xl font-bold text-primary">{functionsUploaded}</div>
                 <div className="text-sm text-muted-foreground">Functions Uploaded</div>
               </div>
               
               <div className="text-center p-4 bg-accent/10 rounded-lg">
-                <div className="text-2xl font-bold text-accent-foreground">{userProfile.totalExecutions}</div>
+                <div className="text-2xl font-bold text-accent-foreground">{totalExecutions}</div>
                 <div className="text-sm text-muted-foreground">Total Executions</div>
               </div>
 
               <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">99.2%</div>
+                <div className="text-2xl font-bold text-green-600">{successRate}</div>
                 <div className="text-sm text-muted-foreground">Success Rate</div>
               </div>
             </CardContent>

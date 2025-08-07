@@ -6,27 +6,38 @@ import { Label } from "../components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Lock, User } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useAuth();
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
-    // Simulate login
-    setTimeout(() => {
+
+    const result = await login({ emailOrUsername, password });
+
+    setLoading(false);
+
+    if (result.success) {
       toast({
         title: "Welcome back!",
         description: "You have been successfully logged in.",
       });
       navigate("/dashboard");
-      setLoading(false);
-    }, 1000);
+    } else {
+      toast({
+        title: "Login failed",
+        description: result.message || "Invalid credentials or server error.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -54,16 +65,17 @@ export default function Login() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="emailOrUsername">Email or Username</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="emailOrUsername"
+                    type="text"
+                    placeholder="Enter your email or username"
+                    value={emailOrUsername}
+                    onChange={(e) => setEmailOrUsername(e.target.value)}
                     className="pl-10"
+                    autoComplete="username"
                     required
                   />
                 </div>
@@ -80,6 +92,7 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10"
+                    autoComplete="current-password"
                     required
                   />
                 </div>

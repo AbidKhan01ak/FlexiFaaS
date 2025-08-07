@@ -2,8 +2,19 @@ import { SidebarTrigger } from "../ui/sidebar";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Bell } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 export function TopHeader() {
+  const { user } = useAuth();
+
+  // Compute initials: Use username if available, else fallback to 'JD'
+  const initials = user?.username
+    ? user.username
+        .split(" ")
+        .map(word => word[0])
+        .join("")
+        .toUpperCase()
+    : "JD";
   return (
     <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm flex items-center px-6 gap-4">
       <SidebarTrigger className="text-foreground" />
@@ -18,7 +29,7 @@ export function TopHeader() {
         
         <Avatar className="h-8 w-8">
           <AvatarFallback className="bg-primary text-primary-foreground font-medium">
-            JD
+            {initials}
           </AvatarFallback>
         </Avatar>
       </div>

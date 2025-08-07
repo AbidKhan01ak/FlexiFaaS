@@ -6,6 +6,7 @@ import { Label } from "../components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Lock, User, Mail } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
+import { api } from "../lib/api";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -39,15 +40,34 @@ export default function Register() {
 
     setLoading(true);
 
-    // Simulate registration
-    setTimeout(() => {
+    try {
+      // Prepare payload (your backend expects password as query param)
+      const payload = {
+        username: formData.username,
+        email: formData.email,
+      };
+
+      await api.post(
+        `/api/auth/register?password=${encodeURIComponent(formData.password)}`,
+        payload
+      );
+
       toast({
         title: "Account created!",
         description: "Your account has been created successfully.",
       });
       navigate("/login");
+    } catch (err) {
+      toast({
+        title: "Registration failed",
+        description:
+          err?.response?.data?.message ||
+          "Could not register. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
