@@ -16,6 +16,7 @@ import { useToast } from "../hooks/use-toast";
 import { ExecutionModal } from "../components/ExecutionModal";
 import { useAuth } from "../context/AuthContext"; 
 import { backendApi } from "../lib/api";
+import {formatUploadTime } from "../lib/date";
 
 
 
@@ -36,6 +37,7 @@ export default function History() {
       try {
         setLoading(true);
         const data = await backendApi.get(`/api/functions/user/${user.id}`);
+        console.log("Data: " , data);
         setFunctions(data);
       } catch (err) {
         setFunctions([]);
@@ -104,18 +106,8 @@ export default function History() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Function History</h1>
+            <h1 className="text-4xl font-bold text-foreground">Function History</h1>
             <p className="text-muted-foreground mt-2">Manage and monitor your deployed functions</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <Calendar className="h-4 w-4 mr-2" />
-              Filter by Date
-            </Button>
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter by Status
-            </Button>
           </div>
         </div>
 
@@ -151,9 +143,6 @@ export default function History() {
                     <TableHead>Runtime</TableHead>
                     <TableHead>Upload Date</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Last Execution</TableHead>
-                    <TableHead>Total Runs</TableHead>
-                    <TableHead>Size</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -175,15 +164,8 @@ export default function History() {
                           {func.runtime}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{func.uploadDate}</TableCell>
+                      <TableCell className="text-muted-foreground">{formatUploadTime(func.uploadTime)}</TableCell>
                       <TableCell>{getStatusBadge(func.status)}</TableCell>
-                      <TableCell className="text-muted-foreground">{func.lastExecution}</TableCell>
-                      <TableCell>
-                        <div className="text-center">
-                          <span className="font-medium">{func.executions}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{func.size}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
