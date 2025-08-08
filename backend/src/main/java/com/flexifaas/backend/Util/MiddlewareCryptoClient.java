@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 
@@ -116,5 +117,11 @@ public class MiddlewareCryptoClient {
         public String getFilename() {
             return this.filename;
         }
+    }
+
+    public static byte[] decryptTextFileAsCode(File file) throws Exception {
+        String encoded = Files.readString(file.toPath());
+        String decrypted = decryptCode(encoded);
+        return decrypted.getBytes(StandardCharsets.UTF_8);
     }
 }

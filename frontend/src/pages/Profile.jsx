@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import {
@@ -14,12 +13,19 @@ import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { AppLayout } from "../components/layout/AppLayout";
 import { User, Mail, Shield, Calendar } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
-import { api } from "../lib/api";
+import { api, backendApi } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  // New stats
+  const [functionsUploaded, setFunctionsUploaded] = useState(null);
+  const [totalExecutions, setTotalExecutions] = useState(null);
+  const [successRate, setSuccessRate] = useState(null);
+
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     async function fetchProfile() {
@@ -27,6 +33,28 @@ export default function Profile() {
         setLoading(true);
         const data = await api.get("/api/users/me");
         setProfile(data);
+
+        if (user?.id) {
+          // Functions Uploaded
+          const functions = await backendApi.get(
+            `/api/functions/user/${user.id}`
+          );
+          setFunctionsUploaded(functions.length);
+
+          // Executions (Logs)
+          const logs = await backendApi.get(`/api/logs/user/${user.id}`);
+          setTotalExecutions(logs.length);
+
+          // Success Rate
+          const successCount = logs.filter(
+            (log) => String(log.status).toUpperCase() === "SUCCESS"
+          ).length;
+          setSuccessRate(
+            logs.length > 0
+              ? ((successCount / logs.length) * 100).toFixed(1) + "%"
+              : "N/A"
+          );
+        }
       } catch (err) {
         toast({
           title: "Failed to load profile",
@@ -61,10 +89,6 @@ export default function Profile() {
       </AppLayout>
     );
   }
-
-  const functionsUploaded = 12; // Replace with real data if available
-  const totalExecutions = 156;
-  const successRate = "99.2%";
 
   const joinDate = profile.createdAt
     ? new Date(profile.createdAt).toLocaleDateString()
@@ -176,46 +200,41 @@ export default function Profile() {
             <CardContent className="space-y-4">
               <div className="text-center p-4 bg-primary/5 rounded-lg">
                 <div className="text-2xl font-bold text-primary">
-                  {functionsUploaded}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Functions Uploaded
-                </div>
-              </div>
-              <div className="text-center p-4 bg-accent/10 rounded-lg">
-                <div className="text-2xl font-bold text-accent-foreground">
-                  {totalExecutions}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Total Executions
+                  {functionsUploaded !== null && (
+                    <div className="text-center p-4 bg-primary/5 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">
+                        {functionsUploaded}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Functions Uploaded
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
-                  {successRate}
+              {totalExecutions !== null && (
+                <div className="text-center p-4 bg-accent/10 rounded-lg">
+                  <div className="text-2xl font-bold text-accent-foreground">
+                    {totalExecutions}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Total Executions
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Success Rate
+              )}
+              {successRate !== null && (
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">
+                    {successRate}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Success Rate
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
-
-        {/* Danger Zone */}
-        <Card className="shadow-card border-0">
-          <CardHeader>
-            <CardTitle className="text-destructive">Danger Zone</CardTitle>
-            <CardDescription>
-              Irreversible and destructive actions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="destructive" className="w-full sm:w-auto" disabled>
-              Delete Account
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     </AppLayout>
   );

@@ -58,7 +58,7 @@ export default function History() {
       try {
         setLoading(true);
         const data = await backendApi.get(`/api/functions/user/${user.id}`);
-
+        data.sort((a, b) => new Date(b.uploadTime) - new Date(a.uploadTime));
         setFunctions(data);
       } catch (err) {
         setFunctions([]);

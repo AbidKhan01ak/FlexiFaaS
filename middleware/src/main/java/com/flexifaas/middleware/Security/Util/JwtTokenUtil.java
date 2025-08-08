@@ -18,7 +18,7 @@ public class JwtTokenUtil {
     private String SECRET_KEY;
 
     // Token validity in milliseconds (e.g., 5 hours)
-    private final long JWT_TOKEN_VALIDITY = 5 * 60 * 60 * 1000;
+    private final long JWT_TOKEN_VALIDITY = 50 * 60 * 60 * 1000;
 
     // Get username from token
     public String getUsernameFromToken(String token) {

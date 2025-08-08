@@ -1,0 +1,11 @@
+{
+  "editor.autoIndentOnPasteWithinString": true,
+  "editor.autoIndentOnPaste": true,
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.fontSize": 15,
+  "files.autoSave": "onFocusChange",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "workbench.colorTheme": "Default Dark Modern",
+  "editor.mouseWheelZoom": true
+}

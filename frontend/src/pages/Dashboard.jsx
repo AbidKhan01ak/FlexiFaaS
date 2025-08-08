@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -17,52 +18,94 @@ import {
   Zap,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const mockFunctions = [
-  {
-    name: "image-processor",
-    runtime: "Node.js",
-    status: "success",
-    lastRun: "2 hours ago",
-  },
-  {
-    name: "data-validator",
-    runtime: "Python",
-    status: "running",
-    lastRun: "5 minutes ago",
-  },
-  {
-    name: "email-sender",
-    runtime: "Node.js",
-    status: "success",
-    lastRun: "1 day ago",
-  },
-];
-
-const stats = [
-  {
-    title: "Total Functions",
-    value: "12",
-    icon: Server,
-    color: "text-primary",
-  },
-  { title: "Active Jobs", value: "3", icon: Activity, color: "text-accent" },
-  {
-    title: "Successful Runs",
-    value: "156",
-    icon: CheckCircle,
-    color: "text-green-500",
-  },
-  {
-    title: "Avg Response Time",
-    value: "245ms",
-    icon: Zap,
-    color: "text-yellow-500",
-  },
-];
+import { backendApi } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [functions, setFunctions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [stats, setStats] = useState({
+    totalFunctions: 0,
+    activeJobs: 0,
+    successfulRuns: 0,
+    avgResponseTime: "N/A",
+  });
+
+  useEffect(() => {
+    async function fetchFunctions() {
+      setLoading(true);
+      try {
+        // Make sure user.id is valid!
+        if (!user?.id) {
+          setFunctions([]);
+          setLoading(false);
+          return;
+        }
+        const data = await backendApi.get(`/api/functions/user/${user.id}`);
+
+        let successfulRuns = 0;
+        let avgResponseTime = "N/A";
+
+        const logs = await backendApi.get(`/api/logs/user/${user.id}`);
+
+        if (logs && logs.length > 0) {
+          successfulRuns = logs.filter(
+            (log) => log.status === "SUCCESS"
+          ).length;
+
+          // Avg Response Time (if available in logs, e.g., log.executionTime)
+          const times = logs
+            .filter((log) => log.executionTime && log.status === "SUCCESS")
+            .map((log) => new Date(log.executionTime).getTime());
+
+          if (times.length > 1) {
+            // Calculate average duration between logs
+            let diffs = [];
+            for (let i = 1; i < times.length; i++) {
+              diffs.push(times[i] - times[i - 1]);
+            }
+            const avgMs = diffs.reduce((a, b) => a + b, 0) / diffs.length;
+            const str_a = avgMs.toString();
+            const result = Number(str_a.slice(0, 3));
+            avgResponseTime = `${Math.round(result)} ms`;
+          }
+        }
+        let activeJobs = (data || []).filter(
+          (func) => String(func.status).toUpperCase() === "ACTIVE"
+        ).length;
+
+        setStats({
+          totalFunctions: functions.length,
+          activeJobs,
+          successfulRuns,
+          avgResponseTime,
+        });
+
+        setFunctions(
+          (data || []).sort((a, b) =>
+            b.uploadTime && a.uploadTime
+              ? new Date(b.uploadTime) - new Date(a.uploadTime)
+              : 0
+          )
+        );
+      } catch (e) {
+        setStats({
+          totalFunctions: 0,
+          activeJobs: 0,
+          successfulRuns: 0,
+          avgResponseTime: "N/A",
+        });
+        setFunctions([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchFunctions();
+    // Only refetch if user changes
+  }, [user?.id]);
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -91,6 +134,33 @@ export default function Dashboard() {
     }
   };
 
+  const statCards = [
+    {
+      title: "Total Functions",
+      value: stats.totalFunctions.toString(),
+      icon: Server,
+      color: "text-primary",
+    },
+    {
+      title: "Active Jobs",
+      value: stats.activeJobs.toString(),
+      icon: Activity,
+      color: "text-accent",
+    },
+    {
+      title: "Successful Runs",
+      value: stats.successfulRuns.toString(),
+      icon: CheckCircle,
+      color: "text-green-500",
+    },
+    {
+      title: "Avg Response Time",
+      value: stats.avgResponseTime,
+      icon: Zap,
+      color: "text-yellow-500",
+    },
+  ];
+
   return (
     <AppLayout>
       <div className="space-y-8">
@@ -110,7 +180,7 @@ export default function Dashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat) => (
+          {statCards.map((stat) => (
             <Card key={stat.title} className="shadow-card border-0">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -163,30 +233,49 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockFunctions.map((func, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center text-white font-medium">
-                      {func.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">{func.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {func.runtime} • Last run {func.lastRun}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {getStatusBadge(func.status)}
-                    <Button variant="ghost" size="sm">
-                      View
-                    </Button>
-                  </div>
+              {loading ? (
+                <div className="py-6 text-center text-muted-foreground">
+                  Loading...
                 </div>
-              ))}
+              ) : functions.length === 0 ? (
+                <div className="py-6 text-center text-muted-foreground">
+                  No functions found. Upload your first function!
+                </div>
+              ) : (
+                functions.slice(0, 5).map((func) => (
+                  <div
+                    key={func.id}
+                    className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center text-white font-medium">
+                        {func.name?.charAt(0)?.toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {func.name}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {func.runtime} • Uploaded{" "}
+                          {func.uploadTime
+                            ? new Date(func.uploadTime).toLocaleString()
+                            : "Unknown"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {getStatusBadge(func.status)}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate("/history")}
+                      >
+                        View
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             <div className="mt-6 text-center">
