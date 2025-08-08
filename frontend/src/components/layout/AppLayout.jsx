@@ -9,9 +9,7 @@ export function AppLayout({ children }) {
         <AppSidebar />
         <div className="flex-1 flex flex-col">
           <TopHeader />
-          <main className="flex-1 p-6">
-            {children}
-          </main>
+          <main className="flex-1 p-6">{children}</main>
         </div>
       </div>
     </SidebarProvider>

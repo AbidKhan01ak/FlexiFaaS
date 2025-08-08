@@ -2,23 +2,43 @@ import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Search, Calendar, Filter, Play, Trash2, Eye, MoreHorizontal } from "lucide-react";
-import { 
+import {
+  Search,
+  Calendar,
+  Filter,
+  Play,
+  Trash2,
+  Eye,
+  MoreHorizontal,
+} from "lucide-react";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
 import { useToast } from "../hooks/use-toast";
 import { ExecutionModal } from "../components/ExecutionModal";
-import { useAuth } from "../context/AuthContext"; 
+import { FunctionLogsModal } from "../components/FunctionLogsModal";
+import { useAuth } from "../context/AuthContext";
 import { backendApi } from "../lib/api";
-import {formatUploadTime } from "../lib/date";
-
-
+import { formatUploadTime } from "../lib/date";
 
 export default function History() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,7 +48,8 @@ export default function History() {
 
   const [functions, setFunctions] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [showLogsModal, setShowLogsModal] = useState(false);
+  const [selectedFunctionId, setSelectedFunctionId] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -37,14 +58,15 @@ export default function History() {
       try {
         setLoading(true);
         const data = await backendApi.get(`/api/functions/user/${user.id}`);
-        console.log("Data: " , data);
+
         setFunctions(data);
       } catch (err) {
         setFunctions([]);
         toast({
           title: "Error loading functions",
-          description: err?.response?.data?.message || "Could not fetch function history.",
-          variant: "destructive"
+          description:
+            err?.response?.data?.message || "Could not fetch function history.",
+          variant: "destructive",
         });
       } finally {
         setLoading(false);
@@ -54,17 +76,32 @@ export default function History() {
     // eslint-disable-next-line
   }, [user?.id]);
 
-  const filteredFunctions = functions.filter(func =>
-  func.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  func.runtime?.toLowerCase().includes(searchTerm.toLowerCase())
-);
+  const filteredFunctions = functions.filter(
+    (func) =>
+      func.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      func.runtime?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const getStatusBadge = (status) => {
     switch (status) {
       case "success":
-        return <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">Success</Badge>;
+        return (
+          <Badge
+            variant="secondary"
+            className="bg-green-100 text-green-700 hover:bg-green-100"
+          >
+            Success
+          </Badge>
+        );
       case "running":
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100">Running</Badge>;
+        return (
+          <Badge
+            variant="secondary"
+            className="bg-blue-100 text-blue-700 hover:bg-blue-100"
+          >
+            Running
+          </Badge>
+        );
       case "failed":
         return <Badge variant="destructive">Failed</Badge>;
       default:
@@ -72,30 +109,23 @@ export default function History() {
     }
   };
 
-  const handleExecute = (functionName) => {
-    setSelectedFunction(functionName);
+  const handleExecute = (func) => {
+    setSelectedFunction(func);
     setShowExecutionModal(true);
   };
 
-  const handleDelete = (functionName) => {
-    toast({
-      title: "Function deleted",
-      description: `Function "${functionName}" has been deleted successfully.`,
-    });
-  };
-
-  const handleViewDetails = (functionName) => {
-    toast({
-      title: "Function details",
-      description: `Viewing details for "${functionName}".`,
-    });
+  const handleViewDetails = (functionId) => {
+    setSelectedFunctionId(functionId);
+    setShowLogsModal(true);
   };
 
   if (loading) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[300px]">
-          <span className="text-muted-foreground">Loading function history...</span>
+          <span className="text-muted-foreground">
+            Loading function history...
+          </span>
         </div>
       </AppLayout>
     );
@@ -106,8 +136,12 @@ export default function History() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-foreground">Function History</h1>
-            <p className="text-muted-foreground mt-2">Manage and monitor your deployed functions</p>
+            <h1 className="text-4xl font-bold text-foreground">
+              Function History
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Manage and monitor your deployed functions
+            </p>
           </div>
         </div>
 
@@ -155,7 +189,9 @@ export default function History() {
                             {func.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-medium text-foreground">{func.name}</p>
+                            <p className="font-medium text-foreground">
+                              {func.name}
+                            </p>
                           </div>
                         </div>
                       </TableCell>
@@ -164,7 +200,9 @@ export default function History() {
                           {func.runtime}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{formatUploadTime(func.uploadTime)}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatUploadTime(func.uploadTime)}
+                      </TableCell>
                       <TableCell>{getStatusBadge(func.status)}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
@@ -174,20 +212,17 @@ export default function History() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleViewDetails(func.name)}>
+                            <DropdownMenuItem
+                              onClick={() => handleViewDetails(func.id)}
+                            >
                               <Eye className="h-4 w-4 mr-2" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleExecute(func.name)}>
+                            <DropdownMenuItem
+                              onClick={() => handleExecute(func)}
+                            >
                               <Play className="h-4 w-4 mr-2" />
                               Execute
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDelete(func.name)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -203,9 +238,13 @@ export default function History() {
                 <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center mb-4">
                   <Search className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-medium text-foreground mb-2">No functions found</h3>
+                <h3 className="text-lg font-medium text-foreground mb-2">
+                  No functions found
+                </h3>
                 <p className="text-muted-foreground">
-                  {searchTerm ? "Try adjusting your search terms" : "Upload your first function to get started"}
+                  {searchTerm
+                    ? "Try adjusting your search terms"
+                    : "Upload your first function to get started"}
                 </p>
               </div>
             )}
@@ -213,10 +252,16 @@ export default function History() {
         </Card>
 
         {/* Execution Modal */}
-        <ExecutionModal 
+        <ExecutionModal
           isOpen={showExecutionModal}
           onClose={() => setShowExecutionModal(false)}
-          functionName={selectedFunction || ""}
+          functionId={selectedFunction?.id}
+          functionName={selectedFunction?.name || ""}
+        />
+        <FunctionLogsModal
+          isOpen={showLogsModal}
+          onClose={() => setShowLogsModal(false)}
+          functionId={selectedFunctionId}
         />
       </div>
     </AppLayout>

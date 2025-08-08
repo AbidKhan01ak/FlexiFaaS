@@ -25,11 +25,13 @@ export function AuthProvider({ children }) {
       form.append("password", password);
 
       const resp = await api.post("/api/auth/login", form, {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" }
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
 
       // resp: { token, username, roles }
       setToken(resp.token);
+      localStorage.setItem("token", resp.token);
+
       const profile = await api.get("/api/users/me");
 
       const userObj = {
@@ -41,7 +43,6 @@ export function AuthProvider({ children }) {
       };
       setUser(userObj);
 
-      localStorage.setItem("token", resp.token);
       localStorage.setItem("user", JSON.stringify(userObj));
       setLoading(false);
       return { success: true };
@@ -49,7 +50,7 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return {
         success: false,
-        message: err?.response?.data?.message || err.message
+        message: err?.response?.data?.message || err.message,
       };
     }
   }
@@ -63,30 +64,31 @@ export function AuthProvider({ children }) {
   }
 
   // --- Fetch Profile on Reload or if not in state ---
-  useEffect(() => {
-    async function fetchProfile() {
-      // Only fetch if token exists but no user loaded
-      if (token && (!user || !user.id)) {
-        try {
-          const resp = await api.get("/api/users/me");
-          const userObj = {
-            id: resp.id,
-            username: resp.username,
-            email: resp.email,
-            roles: resp.role ? [resp.role] : [],
-            status: resp.status,
-          };
-          setUser(userObj);
+  // useEffect(() => {
+  //   async function fetchProfile() {
+  //     // Only fetch if token exists but no user loaded
+  //     if (token && (!user || !user.id)) {
+  //       try {
+  //         const resp = await api.get("/api/users/me");
+  //         console.log(resp);
+  //         const userObj = {
+  //           id: resp.id,
+  //           username: resp.username,
+  //           email: resp.email,
+  //           roles: resp.role ? [resp.role] : [],
+  //           status: resp.status,
+  //         };
+  //         setUser(userObj);
 
-          localStorage.setItem("user", JSON.stringify(userObj));
-        } catch (e) {
-          logout();
-        }
-      }
-    }
-    fetchProfile();
-    // eslint-disable-next-line
-  }, [token]);
+  //         localStorage.setItem("user", JSON.stringify(userObj));
+  //       } catch (e) {
+  //         logout();
+  //       }
+  //     }
+  //   }
+  //   fetchProfile();
+  //   // eslint-disable-next-line
+  // }, [token]);
 
   // --- Role Helpers ---
   function isAdmin() {
@@ -98,17 +100,19 @@ export function AuthProvider({ children }) {
 
   // --- Context Value ---
   return (
-    <AuthContext.Provider value={{
-      token,
-      user,
-      loading,
-      login,
-      setUser,
-      logout,
-      isAdmin,
-      isUser,
-      isAuthenticated: !!token,
-    }}>
+    <AuthContext.Provider
+      value={{
+        token,
+        user,
+        loading,
+        login,
+        setUser,
+        logout,
+        isAdmin,
+        isUser,
+        isAuthenticated: !!token,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

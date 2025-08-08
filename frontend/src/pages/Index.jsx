@@ -16,20 +16,21 @@ const Index = () => {
           Run Functions Instantly, Scale Infinitely.
         </p>
         <p className="text-muted-foreground max-w-lg mx-auto text-base mb-2">
-          Welcome to FlexiFaaS — the simplest way to deploy, run, and manage your serverless functions. 
-          Eliminate infrastructure worries and ship new features faster.
+          Welcome to FlexiFaaS — the simplest way to deploy, run, and manage
+          your serverless functions. Eliminate infrastructure worries and ship
+          new features faster.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-          <Button 
-            onClick={() => navigate("/login")} 
+          <Button
+            onClick={() => navigate("/login")}
             size="lg"
             className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-elegant"
           >
             Get Started
           </Button>
-          <Button 
-            onClick={() => navigate("/register")} 
-            variant="outline" 
+          <Button
+            onClick={() => navigate("/register")}
+            variant="outline"
             size="lg"
             className="border-primary/20 hover:bg-primary/5"
           >

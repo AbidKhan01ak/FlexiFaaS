@@ -3,7 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import { Lock, User } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import { useAuth } from "../context/AuthContext";
@@ -15,7 +21,6 @@ export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { login } = useAuth();
-  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,8 +53,12 @@ export default function Login() {
           <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-primary flex items-center justify-center text-white font-bold text-2xl mb-4 shadow-elegant">
             F
           </div>
-          <h1 className="text-3xl font-bold text-foreground">Welcome to FlexiFaaS</h1>
-          <p className="text-muted-foreground mt-2">Effortless Serverless, Secure and Fast!</p>
+          <h1 className="text-3xl font-bold text-foreground">
+            Welcome to FlexiFaaS
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Effortless Serverless, Secure and Fast!
+          </p>
         </div>
 
         <Card className="shadow-card border-0">
@@ -110,7 +119,10 @@ export default function Login() {
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
                 Don't have an account?{" "}
-                <Link to="/register" className="text-primary font-medium hover:underline">
+                <Link
+                  to="/register"
+                  className="text-primary font-medium hover:underline"
+                >
                   Register
                 </Link>
               </p>

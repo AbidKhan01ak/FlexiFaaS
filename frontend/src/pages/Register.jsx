@@ -3,7 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import { Lock, User, Mail } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import { api } from "../lib/api";
@@ -79,7 +85,9 @@ export default function Register() {
             F
           </div>
           <h1 className="text-3xl font-bold text-foreground">Join FlexiFaaS</h1>
-          <p className="text-muted-foreground mt-2">Create your account and start building</p>
+          <p className="text-muted-foreground mt-2">
+            Create your account and start building
+          </p>
         </div>
 
         <Card className="shadow-card border-0">
@@ -88,9 +96,7 @@ export default function Register() {
               <User className="h-5 w-5 text-primary" />
               Sign Up
             </CardTitle>
-            <CardDescription>
-              Create your FlexiFaaS account
-            </CardDescription>
+            <CardDescription>Create your FlexiFaaS account</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -163,7 +169,8 @@ export default function Register() {
               </div>
 
               <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md">
-                Password must be at least 8 characters long and contain uppercase, lowercase, and numbers.
+                Password must be at least 8 characters long and contain
+                uppercase, lowercase, and numbers.
               </div>
 
               <Button
@@ -178,7 +185,10 @@ export default function Register() {
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <Link to="/login" className="text-primary font-medium hover:underline">
+                <Link
+                  to="/login"
+                  className="text-primary font-medium hover:underline"
+                >
                   Login
                 </Link>
               </p>

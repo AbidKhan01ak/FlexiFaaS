@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // ==== BASE URLs ====
-const BASE_URL = "http://localhost:8081";       // Middleware (auth, users, etc.)
+const BASE_URL = "http://localhost:8081"; // Middleware (auth, users, etc.)
 export const BACKEND_BASE = "http://localhost:8080"; // Backend (functions, uploads, etc.)
 
 // ==== JWT TOKEN ====
@@ -26,8 +26,12 @@ function attachAuthHeader(config) {
 }
 
 // Add to both clients:
-middlewareClient.interceptors.request.use(attachAuthHeader, (error) => Promise.reject(error));
-backendClient.interceptors.request.use(attachAuthHeader, (error) => Promise.reject(error));
+middlewareClient.interceptors.request.use(attachAuthHeader, (error) =>
+  Promise.reject(error)
+);
+backendClient.interceptors.request.use(attachAuthHeader, (error) =>
+  Promise.reject(error)
+);
 
 function handleAuthError(error) {
   const token = getToken();
@@ -62,10 +66,14 @@ function unwrap(res) {
 // For middleware (8081)
 export const api = {
   get: (url, params) => middlewareClient.get(url, { params }).then(unwrap),
-  post: (url, data, config = {}) => middlewareClient.post(url, data, config).then(unwrap),
-  put: (url, data, config = {}) => middlewareClient.put(url, data, config).then(unwrap),
-  delete: (url, config = {}) => middlewareClient.delete(url, config).then(unwrap),
-  patch: (url, data, config = {}) => middlewareClient.patch(url, data, config).then(unwrap),
+  post: (url, data, config = {}) =>
+    middlewareClient.post(url, data, config).then(unwrap),
+  put: (url, data, config = {}) =>
+    middlewareClient.put(url, data, config).then(unwrap),
+  delete: (url, config = {}) =>
+    middlewareClient.delete(url, config).then(unwrap),
+  patch: (url, data, config = {}) =>
+    middlewareClient.patch(url, data, config).then(unwrap),
 
   // File upload (middleware, if needed)
   upload: (url, formData, config = {}) =>
@@ -83,10 +91,13 @@ export const api = {
 // For backend (8080)
 export const backendApi = {
   get: (url, params) => backendClient.get(url, { params }).then(unwrap),
-  post: (url, data, config = {}) => backendClient.post(url, data, config).then(unwrap),
-  put: (url, data, config = {}) => backendClient.put(url, data, config).then(unwrap),
+  post: (url, data, config = {}) =>
+    backendClient.post(url, data, config).then(unwrap),
+  put: (url, data, config = {}) =>
+    backendClient.put(url, data, config).then(unwrap),
   delete: (url, config = {}) => backendClient.delete(url, config).then(unwrap),
-  patch: (url, data, config = {}) => backendClient.patch(url, data, config).then(unwrap),
+  patch: (url, data, config = {}) =>
+    backendClient.patch(url, data, config).then(unwrap),
 
   // File upload (backend)
   upload: (url, formData, config = {}) =>

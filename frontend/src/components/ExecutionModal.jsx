@@ -1,89 +1,129 @@
 import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
 import { ScrollArea } from "../components/ui/scroll-area";
 import { Separator } from "../components/ui/separator";
 import { Play, Square, Clock, CheckCircle, XCircle, Copy } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
+import { backendApi } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
+import { Input } from "../components/ui/input";
 
-// Mock Output & Error
-const mockOutput = `Function executed successfully!
-
-Input received:
-{
-  "message": "Hello, FlexiFaaS!",
-  "timestamp": "2024-01-15T10:30:00Z"
-}
-
-Processing...
-✓ Validation passed
-✓ Data processed
-✓ Response generated
-
-Output:
-{
-  "result": "Function completed successfully",
-  "processedAt": "2024-01-15T10:30:02Z",
-  "executionTime": "2.3s",
-  "status": "success"
-}
-
-Memory usage: 128MB / 256MB
-CPU usage: 45%
-Execution time: 2.34 seconds`;
-
-const mockError = `Error executing function!
-
-Input received:
-{
-  "message": "Test error case",
-  "timestamp": "2024-01-15T10:30:00Z"
-}
-
-Processing...
-✓ Validation passed
-✗ Runtime error occurred
-
-Error Details:
-TypeError: Cannot read property 'undefined' of null
-    at processData (/var/task/index.js:23:15)
-    at handler (/var/task/index.js:45:12)
-    at Runtime.handleOnce (/var/runtime/Runtime.js:66:25)
-
-Stack trace:
-  Line 23: const result = data.invalid.property;
-  Line 45: return processData(event.body);
-
-Memory usage: 64MB / 256MB
-CPU usage: 12%
-Execution time: 0.89 seconds`;
-
-export function ExecutionModal({ isOpen, onClose, functionName }) {
-  const [status, setStatus] = useState("idle");
+export function ExecutionModal({ isOpen, onClose, functionId, functionName }) {
+  const [status, setStatus] = useState("idle"); // idle | queued | running | success | failed
   const [output, setOutput] = useState("");
-  const [startTime, setStartTime] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
   const [executionTime, setExecutionTime] = useState(0);
+  const [inputPayload, setInputPayload] = useState(""); // User input for function
+  const [logPolling, setLogPolling] = useState(false);
+  const [startTime, setStartTime] = useState(null);
+
+  const { user } = useAuth();
   const { toast } = useToast();
 
+  // Reset modal state when closed
   useEffect(() => {
     if (!isOpen) {
       setStatus("idle");
       setOutput("");
-      setStartTime(null);
+      setErrorMsg("");
       setExecutionTime(0);
+      setInputPayload("");
+      setLogPolling(false);
+      setStartTime(null);
     }
   }, [isOpen]);
+
+  // Poll for execution logs after triggering execution
+  useEffect(() => {
+    let pollInterval;
+    if (logPolling && functionId && user?.id) {
+      pollInterval = setInterval(async () => {
+        try {
+          // Fetch latest log for this function and user
+          const logs = await backendApi.get(`/api/logs/function/${functionId}`);
+          // Filter logs for current user (optional: backend can do this)
+          const userLogs = logs.filter((l) => l.userId === user.id);
+          const latestLog = userLogs.sort(
+            (a, b) => new Date(b.executionTime) - new Date(a.executionTime)
+          )[0];
+          if (latestLog) {
+            setStatus(
+              latestLog.status === "SUCCESS"
+                ? "success"
+                : latestLog.status === "FAILED"
+                ? "failed"
+                : latestLog.status?.toLowerCase() || "running"
+            );
+            setOutput(latestLog.output || "");
+            setErrorMsg(latestLog.errorMessage || "");
+            setExecutionTime(
+              latestLog.executionTime
+                ? (
+                    (new Date(latestLog.executionTime) - new Date(startTime)) /
+                    1000
+                  ).toFixed(2)
+                : 0
+            );
+            if (["SUCCESS", "FAILED", "ERROR"].includes(latestLog.status)) {
+              setLogPolling(false);
+              clearInterval(pollInterval);
+              toast({
+                title:
+                  latestLog.status === "SUCCESS"
+                    ? "Execution completed"
+                    : "Execution failed",
+                description:
+                  latestLog.status === "SUCCESS"
+                    ? "Function executed successfully"
+                    : latestLog.errorMessage || "Execution failed",
+                variant:
+                  latestLog.status === "SUCCESS" ? "default" : "destructive",
+              });
+            }
+          }
+        } catch (e) {
+          // You may display error toast here if needed
+        }
+      }, 1500);
+    }
+    return () => pollInterval && clearInterval(pollInterval);
+    // eslint-disable-next-line
+  }, [logPolling, functionId, user, startTime]);
 
   const getStatusBadge = (status) => {
     switch (status) {
       case "queued":
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">Queued</Badge>;
+        return (
+          <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">
+            Queued
+          </Badge>
+        );
       case "running":
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-700">Running</Badge>;
+        return (
+          <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+            Running
+          </Badge>
+        );
       case "success":
-        return <Badge variant="secondary" className="bg-green-100 text-green-700">Success</Badge>;
+        return (
+          <Badge variant="secondary" className="bg-green-100 text-green-700">
+            Success
+          </Badge>
+        );
       case "failed":
         return <Badge variant="destructive">Failed</Badge>;
       default:
@@ -106,31 +146,36 @@ export function ExecutionModal({ isOpen, onClose, functionName }) {
     }
   };
 
-  const executeFunction = () => {
+  const executeFunction = async () => {
+    if (!functionId || !user?.id) return;
     setStatus("queued");
     setStartTime(new Date());
     setOutput("Function queued for execution...\n");
+    setErrorMsg("");
+    setExecutionTime(0);
 
-    setTimeout(() => {
-      setStatus("running");
-      setOutput(prev => prev + "Function is now running...\n");
-    }, 1000);
-
-    setTimeout(() => {
-      // Randomly succeed or fail for demo
-      const shouldFail = Math.random() < 0.3;
-      setStatus(shouldFail ? "failed" : "success");
-      setOutput(shouldFail ? mockError : mockOutput);
-      setExecutionTime(shouldFail ? 0.89 : 2.34);
-      
-      toast({
-        title: shouldFail ? "Execution failed" : "Execution completed",
-        description: shouldFail 
-          ? "Function execution failed with errors" 
-          : "Function executed successfully",
-        variant: shouldFail ? "destructive" : "default",
+    try {
+      // Send execution request to backend
+      await backendApi.post("/api/functions/execute", {
+        functionId,
+        userId: user.id,
+        inputPayload,
       });
-    }, 3000);
+      setLogPolling(true);
+      setStatus("running");
+      toast({
+        title: "Function execution queued",
+        description: "Execution started. Polling for results...",
+      });
+    } catch (e) {
+      setStatus("failed");
+      setErrorMsg(e?.response?.data?.message || "Failed to queue execution");
+      toast({
+        title: "Execution failed",
+        description: e?.response?.data?.message || "Could not start execution",
+        variant: "destructive",
+      });
+    }
   };
 
   const copyOutput = () => {
@@ -142,14 +187,14 @@ export function ExecutionModal({ isOpen, onClose, functionName }) {
   };
 
   const stopExecution = () => {
-    if (status === "running" || status === "queued") {
-      setStatus("failed");
-      setOutput(prev => prev + "\nExecution stopped by user.");
-      toast({
-        title: "Execution stopped",
-        description: "Function execution has been stopped.",
-      });
-    }
+    setLogPolling(false);
+    setStatus("failed");
+    setOutput((prev) => prev + "\nExecution stopped by user.");
+    setErrorMsg("Execution stopped by user.");
+    toast({
+      title: "Execution stopped",
+      description: "Function execution has been stopped.",
+    });
   };
 
   return (
@@ -160,7 +205,7 @@ export function ExecutionModal({ isOpen, onClose, functionName }) {
             Execute Function: {functionName}
           </DialogTitle>
           <DialogDescription>
-            Run your serverless function and view real-time execution logs
+            Run your serverless function and view execution logs in real time.
           </DialogDescription>
         </DialogHeader>
 
@@ -187,16 +232,39 @@ export function ExecutionModal({ isOpen, onClose, functionName }) {
                 <div>
                   <p className="text-muted-foreground">Duration</p>
                   <p className="font-medium">
-                    {executionTime > 0 ? `${executionTime}s` : status === "running" ? "Running..." : "0s"}
+                    {executionTime > 0
+                      ? `${executionTime}s`
+                      : status === "running"
+                      ? "Running..."
+                      : "0s"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Memory Usage</p>
-                  <p className="font-medium">
-                    {status === "success" ? "128MB / 256MB" : status === "failed" ? "64MB / 256MB" : "N/A"}
+                  <p className="text-muted-foreground">Error</p>
+                  <p
+                    className={`font-medium ${errorMsg ? "text-red-500" : ""}`}
+                  >
+                    {errorMsg || "-"}
                   </p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Input Payload */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">
+                Function Input (JSON or Args)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Input
+                placeholder="Enter function input payload (if needed)..."
+                value={inputPayload}
+                onChange={(e) => setInputPayload(e.target.value)}
+                disabled={status === "running" || status === "queued"}
+              />
             </CardContent>
           </Card>
 
@@ -208,14 +276,15 @@ export function ExecutionModal({ isOpen, onClose, functionName }) {
               className="bg-gradient-primary hover:opacity-90"
             >
               <Play className="h-4 w-4 mr-2" />
-              {status === "running" ? "Running..." : status === "queued" ? "Queued..." : "Execute Function"}
+              {status === "running"
+                ? "Running..."
+                : status === "queued"
+                ? "Queued..."
+                : "Execute Function"}
             </Button>
-            
+
             {(status === "running" || status === "queued") && (
-              <Button
-                onClick={stopExecution}
-                variant="destructive"
-              >
+              <Button onClick={stopExecution} variant="destructive">
                 <Square className="h-4 w-4 mr-2" />
                 Stop
               </Button>
@@ -251,7 +320,10 @@ export function ExecutionModal({ isOpen, onClose, functionName }) {
                       <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center mb-4">
                         <Play className="h-8 w-8" />
                       </div>
-                      <p>Click "Execute Function" to start execution and view output logs</p>
+                      <p>
+                        Click "Execute Function" to start execution and view
+                        output logs
+                      </p>
                     </div>
                   )}
                 </div>

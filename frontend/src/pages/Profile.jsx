@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { AppLayout } from "../components/layout/AppLayout";
@@ -24,7 +30,8 @@ export default function Profile() {
       } catch (err) {
         toast({
           title: "Failed to load profile",
-          description: err?.response?.data?.message || "Error fetching user info",
+          description:
+            err?.response?.data?.message || "Error fetching user info",
           variant: "destructive",
         });
       } finally {
@@ -55,7 +62,7 @@ export default function Profile() {
     );
   }
 
-  const functionsUploaded = 12;    // Replace with real data if available
+  const functionsUploaded = 12; // Replace with real data if available
   const totalExecutions = 156;
   const successRate = "99.2%";
 
@@ -99,10 +106,16 @@ export default function Profile() {
                   </h3>
                   <p className="text-muted-foreground">{profile.email}</p>
                   <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/10">
+                    <Badge
+                      variant="secondary"
+                      className="bg-primary/10 text-primary hover:bg-primary/10"
+                    >
                       {profile.role || "User"}
                     </Badge>
-                    <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">
+                    <Badge
+                      variant="secondary"
+                      className="bg-green-100 text-green-700 hover:bg-green-100"
+                    >
                       {profile.status || "Active"}
                     </Badge>
                   </div>
@@ -162,16 +175,28 @@ export default function Profile() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center p-4 bg-primary/5 rounded-lg">
-                <div className="text-2xl font-bold text-primary">{functionsUploaded}</div>
-                <div className="text-sm text-muted-foreground">Functions Uploaded</div>
+                <div className="text-2xl font-bold text-primary">
+                  {functionsUploaded}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Functions Uploaded
+                </div>
               </div>
               <div className="text-center p-4 bg-accent/10 rounded-lg">
-                <div className="text-2xl font-bold text-accent-foreground">{totalExecutions}</div>
-                <div className="text-sm text-muted-foreground">Total Executions</div>
+                <div className="text-2xl font-bold text-accent-foreground">
+                  {totalExecutions}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Total Executions
+                </div>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{successRate}</div>
-                <div className="text-sm text-muted-foreground">Success Rate</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {successRate}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Success Rate
+                </div>
               </div>
             </CardContent>
           </Card>

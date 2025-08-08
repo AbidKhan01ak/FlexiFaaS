@@ -1,21 +1,64 @@
 import { Button } from "../components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Upload, Activity, CheckCircle, Clock, Server, Zap } from "lucide-react";
+import {
+  Upload,
+  Activity,
+  CheckCircle,
+  Clock,
+  Server,
+  Zap,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const mockFunctions = [
-  { name: "image-processor", runtime: "Node.js", status: "success", lastRun: "2 hours ago" },
-  { name: "data-validator", runtime: "Python", status: "running", lastRun: "5 minutes ago" },
-  { name: "email-sender", runtime: "Node.js", status: "success", lastRun: "1 day ago" },
+  {
+    name: "image-processor",
+    runtime: "Node.js",
+    status: "success",
+    lastRun: "2 hours ago",
+  },
+  {
+    name: "data-validator",
+    runtime: "Python",
+    status: "running",
+    lastRun: "5 minutes ago",
+  },
+  {
+    name: "email-sender",
+    runtime: "Node.js",
+    status: "success",
+    lastRun: "1 day ago",
+  },
 ];
 
 const stats = [
-  { title: "Total Functions", value: "12", icon: Server, color: "text-primary" },
+  {
+    title: "Total Functions",
+    value: "12",
+    icon: Server,
+    color: "text-primary",
+  },
   { title: "Active Jobs", value: "3", icon: Activity, color: "text-accent" },
-  { title: "Successful Runs", value: "156", icon: CheckCircle, color: "text-green-500" },
-  { title: "Avg Response Time", value: "245ms", icon: Zap, color: "text-yellow-500" },
+  {
+    title: "Successful Runs",
+    value: "156",
+    icon: CheckCircle,
+    color: "text-green-500",
+  },
+  {
+    title: "Avg Response Time",
+    value: "245ms",
+    icon: Zap,
+    color: "text-yellow-500",
+  },
 ];
 
 export default function Dashboard() {
@@ -24,9 +67,23 @@ export default function Dashboard() {
   const getStatusBadge = (status) => {
     switch (status) {
       case "success":
-        return <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">Success</Badge>;
+        return (
+          <Badge
+            variant="secondary"
+            className="bg-green-100 text-green-700 hover:bg-green-100"
+          >
+            Success
+          </Badge>
+        );
       case "running":
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100">Running</Badge>;
+        return (
+          <Badge
+            variant="secondary"
+            className="bg-blue-100 text-blue-700 hover:bg-blue-100"
+          >
+            Running
+          </Badge>
+        );
       case "failed":
         return <Badge variant="destructive">Failed</Badge>;
       default:
@@ -58,8 +115,12 @@ export default function Dashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {stat.title}
+                    </p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {stat.value}
+                    </p>
                   </div>
                   <stat.icon className={`h-8 w-8 ${stat.color}`} />
                 </div>
@@ -96,29 +157,38 @@ export default function Dashboard() {
               <Activity className="h-5 w-5 text-primary" />
               Recent Functions
             </CardTitle>
-            <CardDescription>Your latest serverless function deployments</CardDescription>
+            <CardDescription>
+              Your latest serverless function deployments
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {mockFunctions.map((func, index) => (
-                <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center text-white font-medium">
                       {func.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <p className="font-medium text-foreground">{func.name}</p>
-                      <p className="text-sm text-muted-foreground">{func.runtime} • Last run {func.lastRun}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {func.runtime} • Last run {func.lastRun}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     {getStatusBadge(func.status)}
-                    <Button variant="ghost" size="sm">View</Button>
+                    <Button variant="ghost" size="sm">
+                      View
+                    </Button>
                   </div>
                 </div>
               ))}
             </div>
-            
+
             <div className="mt-6 text-center">
               <Button variant="outline" onClick={() => navigate("/history")}>
                 View All Functions

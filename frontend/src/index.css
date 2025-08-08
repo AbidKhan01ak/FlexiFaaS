@@ -51,8 +51,16 @@ All colors MUST be HSL.
     --sidebar-ring: 213 97% 56%;
 
     /* Custom gradients and shadows */
-    --gradient-primary: linear-gradient(135deg, hsl(213 97% 56%), hsl(213 93% 71%));
-    --gradient-subtle: linear-gradient(180deg, hsl(213 100% 98%), hsl(213 100% 95%));
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(213 97% 56%),
+      hsl(213 93% 71%)
+    );
+    --gradient-subtle: linear-gradient(
+      180deg,
+      hsl(213 100% 98%),
+      hsl(213 100% 95%)
+    );
     --shadow-elegant: 0 8px 25px -8px hsl(213 97% 56% / 0.2);
     --shadow-card: 0 4px 15px -4px hsl(213 50% 80% / 0.15);
   }

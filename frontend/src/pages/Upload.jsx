@@ -3,12 +3,35 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import { Progress } from "../components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../components/ui/tabs";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Upload as UploadIcon, File, CheckCircle, AlertCircle, Code } from "lucide-react";
+import {
+  Upload as UploadIcon,
+  File,
+  CheckCircle,
+  AlertCircle,
+  Code,
+} from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
@@ -19,7 +42,6 @@ const runtimes = [
   { value: "python", label: "Python" },
   { value: "javascript", label: "JavaScript" },
 ];
-
 
 export default function Upload() {
   const [formData, setFormData] = useState({
@@ -36,7 +58,6 @@ export default function Upload() {
   const [uploadMode, setUploadMode] = useState("file");
   const { toast } = useToast();
   const { user } = useAuth();
- 
 
   const handleChange = (e) => {
     setFormData({
@@ -122,18 +143,16 @@ export default function Upload() {
         data.append("description", formData.description || "");
         data.append("userId", user.id);
 
-        response = await backendApi.upload(
-          `/api/functions/upload`,
-          data,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-            onUploadProgress: (progressEvent) => {
-              if (progressEvent.total) {
-                setUploadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
-              }
-            },
-          }
-        );
+        response = await backendApi.upload(`/api/functions/upload`, data, {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              setUploadProgress(
+                Math.round((progressEvent.loaded * 100) / progressEvent.total)
+              );
+            }
+          },
+        });
       } else {
         // ---- CODE UPLOAD ----
         // Using multipart to support large code/text
@@ -144,18 +163,16 @@ export default function Upload() {
         data.append("description", formData.description || "");
         data.append("userId", user.id);
 
-        response = await backendApi.upload(
-          `/api/functions/uploadText`,
-          data,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-            onUploadProgress: (progressEvent) => {
-              if (progressEvent.total) {
-                setUploadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
-              }
-            },
-          }
-        );
+        response = await backendApi.upload(`/api/functions/uploadText`, data, {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              setUploadProgress(
+                Math.round((progressEvent.loaded * 100) / progressEvent.total)
+              );
+            }
+          },
+        });
       }
 
       // On success:
@@ -165,9 +182,14 @@ export default function Upload() {
         title: "Upload successful!",
         description: `Function "${formData.name}" has been uploaded successfully.`,
       });
-      setFormData({ name: "", runtime: "", description: "", commandLineArgs: "", code: "" });
+      setFormData({
+        name: "",
+        runtime: "",
+        description: "",
+        commandLineArgs: "",
+        code: "",
+      });
       setFile(null);
-
     } catch (err) {
       setUploading(false);
       setUploadProgress(0);
@@ -183,16 +205,15 @@ export default function Upload() {
     }
   };
 
-
   const getFileIcon = () => {
     if (!file) return <UploadIcon className="h-8 w-8 text-muted-foreground" />;
-    const fileType = file.name.split('.').pop()?.toLowerCase();
+    const fileType = file.name.split(".").pop()?.toLowerCase();
     switch (fileType) {
-      case 'js':
+      case "js":
         return <File className="h-8 w-8 text-yellow-500" />;
-      case 'py':
+      case "py":
         return <File className="h-8 w-8 text-green-500" />;
-      case 'java':
+      case "java":
         return <File className="h-8 w-8 text-red-500" />;
       default:
         return <File className="h-8 w-8 text-gray-500" />;
@@ -204,8 +225,12 @@ export default function Upload() {
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-foreground">Upload Function</h1>
-          <p className="text-muted-foreground mt-2">Deploy your serverless function to FlexiFaaS</p>
+          <h1 className="text-3xl font-bold text-foreground">
+            Upload Function
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Deploy your serverless function to FlexiFaaS
+          </p>
         </div>
 
         <Card className="shadow-card border-0">
@@ -223,13 +248,22 @@ export default function Upload() {
               {/* Upload Mode Selection */}
               <div className="space-y-2">
                 <Label>Upload Method</Label>
-                <Tabs value={uploadMode} onValueChange={(value) => setUploadMode(value)}>
+                <Tabs
+                  value={uploadMode}
+                  onValueChange={(value) => setUploadMode(value)}
+                >
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="file" className="flex items-center gap-2">
+                    <TabsTrigger
+                      value="file"
+                      className="flex items-center gap-2"
+                    >
                       <UploadIcon className="h-4 w-4" />
                       Upload File
                     </TabsTrigger>
-                    <TabsTrigger value="code" className="flex items-center gap-2">
+                    <TabsTrigger
+                      value="code"
+                      className="flex items-center gap-2"
+                    >
                       <Code className="h-4 w-4" />
                       Write Code
                     </TabsTrigger>
@@ -256,7 +290,9 @@ export default function Upload() {
                         {getFileIcon()}
                         {file ? (
                           <div className="text-center">
-                            <p className="font-medium text-foreground">{file.name}</p>
+                            <p className="font-medium text-foreground">
+                              {file.name}
+                            </p>
                             <p className="text-sm text-muted-foreground">
                               {(file.size / 1024).toFixed(1)} KB
                             </p>
@@ -274,7 +310,8 @@ export default function Upload() {
                               or click to browse files
                             </p>
                             <p className="text-xs text-muted-foreground mt-2">
-                              Supports: .js, .ts, .py, .go, .java, .zip, .tar.gz (max 10MB)
+                              Supports: .js, .ts, .py, .go, .java, .zip, .tar.gz
+                              (max 10MB)
                             </p>
                           </div>
                         )}
@@ -321,7 +358,12 @@ export function handler(event, context) {
               {/* Runtime Selection */}
               <div className="space-y-2">
                 <Label htmlFor="runtime">Runtime</Label>
-                <Select value={formData.runtime} onValueChange={(value) => setFormData({...formData, runtime: value})}>
+                <Select
+                  value={formData.runtime}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, runtime: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select runtime environment" />
                   </SelectTrigger>
@@ -350,7 +392,9 @@ export function handler(event, context) {
 
               {/* Command Line Arguments */}
               <div className="space-y-2">
-                <Label htmlFor="commandLineArgs">Command Line Arguments (Optional)</Label>
+                <Label htmlFor="commandLineArgs">
+                  Command Line Arguments (Optional)
+                </Label>
                 <Input
                   id="commandLineArgs"
                   name="commandLineArgs"
@@ -365,7 +409,9 @@ export function handler(event, context) {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label>Upload Progress</Label>
-                    <span className="text-sm text-muted-foreground">{uploadProgress}%</span>
+                    <span className="text-sm text-muted-foreground">
+                      {uploadProgress}%
+                    </span>
                   </div>
                   <Progress value={uploadProgress} className="h-2" />
                 </div>
@@ -376,7 +422,9 @@ export function handler(event, context) {
                 <div className="flex items-start gap-3">
                   <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-blue-900">Requirements</p>
+                    <p className="text-sm font-medium text-blue-900">
+                      Requirements
+                    </p>
                     <ul className="text-sm text-blue-800 mt-1 space-y-1">
                       <li>• Function must export a main handler function</li>
                       <li>• Maximum file size: 10MB</li>
@@ -390,7 +438,12 @@ export function handler(event, context) {
               <Button
                 type="submit"
                 className="w-full bg-gradient-primary hover:opacity-90 transition-opacity shadow-elegant"
-                disabled={uploading || (uploadMode === "file" ? !file : !formData.code.trim()) || !formData.name || !formData.runtime}
+                disabled={
+                  uploading ||
+                  (uploadMode === "file" ? !file : !formData.code.trim()) ||
+                  !formData.name ||
+                  !formData.runtime
+                }
               >
                 {uploading ? "Uploading..." : "Upload Function"}
               </Button>
