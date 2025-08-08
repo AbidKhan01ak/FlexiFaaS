@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api/functions")
 public class FunctionController {
 

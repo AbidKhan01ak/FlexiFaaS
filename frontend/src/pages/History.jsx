@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
@@ -14,59 +14,10 @@ import {
 } from "../components/ui/dropdown-menu";
 import { useToast } from "../hooks/use-toast";
 import { ExecutionModal } from "../components/ExecutionModal";
+import { useAuth } from "../context/AuthContext"; 
+import { backendApi } from "../lib/api";
 
-const mockFunctions = [
-  {
-    id: "1",
-    name: "image-processor",
-    runtime: "Node.js 18",
-    uploadDate: "2024-01-15",
-    status: "success",
-    lastExecution: "2 hours ago",
-    executions: 45,
-    size: "2.3 MB"
-  },
-  {
-    id: "2",
-    name: "data-validator",
-    runtime: "Python 3.11",
-    uploadDate: "2024-01-14",
-    status: "running",
-    lastExecution: "5 minutes ago",
-    executions: 23,
-    size: "1.8 MB"
-  },
-  {
-    id: "3",
-    name: "email-sender",
-    runtime: "Node.js 20",
-    uploadDate: "2024-01-12",
-    status: "success",
-    lastExecution: "1 day ago",
-    executions: 67,
-    size: "0.9 MB"
-  },
-  {
-    id: "4",
-    name: "pdf-generator",
-    runtime: "Python 3.10",
-    uploadDate: "2024-01-10",
-    status: "failed",
-    lastExecution: "3 hours ago",
-    executions: 12,
-    size: "3.1 MB"
-  },
-  {
-    id: "5",
-    name: "webhook-handler",
-    runtime: "Go 1.19",
-    uploadDate: "2024-01-08",
-    status: "success",
-    lastExecution: "30 minutes ago",
-    executions: 156,
-    size: "5.2 MB"
-  },
-];
+
 
 export default function History() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -74,10 +25,37 @@ export default function History() {
   const [showExecutionModal, setShowExecutionModal] = useState(false);
   const { toast } = useToast();
 
-  const filteredFunctions = mockFunctions.filter(func =>
-    func.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    func.runtime.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const [functions, setFunctions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const { user } = useAuth();
+
+  useEffect(() => {
+    async function fetchFunctions() {
+      if (!user?.id) return;
+      try {
+        setLoading(true);
+        const data = await backendApi.get(`/api/functions/user/${user.id}`);
+        setFunctions(data);
+      } catch (err) {
+        setFunctions([]);
+        toast({
+          title: "Error loading functions",
+          description: err?.response?.data?.message || "Could not fetch function history.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchFunctions();
+    // eslint-disable-next-line
+  }, [user?.id]);
+
+  const filteredFunctions = functions.filter(func =>
+  func.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  func.runtime?.toLowerCase().includes(searchTerm.toLowerCase())
+);
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -111,6 +89,15 @@ export default function History() {
     });
   };
 
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-[300px]">
+          <span className="text-muted-foreground">Loading function history...</span>
+        </div>
+      </AppLayout>
+    );
+  }
   return (
     <AppLayout>
       <div className="space-y-8">

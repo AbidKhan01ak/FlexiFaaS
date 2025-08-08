@@ -53,6 +53,7 @@ public class UserServiceImpl implements UserService {
         dto.setEmail(user.getEmail());
         dto.setRole(user.getRole());
         dto.setStatus(user.getStatus());
+        dto.setCreatedAt(user.getCreatedAt());
         return dto;
     }
 
@@ -68,6 +69,7 @@ public class UserServiceImpl implements UserService {
         dto.setEmail(user.getEmail());
         dto.setRole(user.getRole());
         dto.setStatus(user.getStatus());
+        dto.setCreatedAt(user.getCreatedAt());
         return dto;
     }
 
@@ -82,10 +84,12 @@ public class UserServiceImpl implements UserService {
             dto.setEmail(user.getEmail());
             dto.setRole(user.getRole());
             dto.setStatus(user.getStatus());
+            dto.setCreatedAt(user.getCreatedAt());
             dtos.add(dto);
         }
         return dtos;
     }
+
 
     @Override
     public void deleteUser(Long id) {

@@ -1,11 +1,14 @@
 package com.flexifaas.middleware.Dto;
 
+import java.sql.Timestamp;
+
 public class UserDTO {
     private Long id;
     private String username;
     private String email;
     private String role;
     private String status;
+    private Timestamp createdAt;
 
     // Constructors
     public UserDTO() {}
@@ -35,4 +38,11 @@ public class UserDTO {
     public void setRole(String role) { this.role = role; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Timestamp createdAt) {
+        this.createdAt = createdAt;
+    }
 }

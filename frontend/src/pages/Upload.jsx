@@ -10,12 +10,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { AppLayout } from "../components/layout/AppLayout";
 import { Upload as UploadIcon, File, CheckCircle, AlertCircle, Code } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
+import { useAuth } from "../context/AuthContext";
+import axios from "axios";
+import { backendApi } from "../lib/api";
 
 const runtimes = [
   { value: "java", label: "Java" },
   { value: "python", label: "Python" },
   { value: "javascript", label: "JavaScript" },
 ];
+
 
 export default function Upload() {
   const [formData, setFormData] = useState({
@@ -31,6 +35,8 @@ export default function Upload() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadMode, setUploadMode] = useState("file");
   const { toast } = useToast();
+  const { user } = useAuth();
+ 
 
   const handleChange = (e) => {
     setFormData({
@@ -65,32 +71,26 @@ export default function Upload() {
     }
   };
 
-  const simulateUpload = () => {
-    setUploading(true);
-    setUploadProgress(0);
-
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setUploading(false);
-          toast({
-            title: "Upload successful!",
-            description: `Function "${formData.name}" has been uploaded successfully.`,
-          });
-          // Reset form
-          setFormData({ name: "", runtime: "", description: "", commandLineArgs: "", code: "" });
-          setFile(null);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 200);
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
+    console.log("Current user:", user);
+    // Validate input
+    if (!user || !user.id) {
+      toast({
+        title: "Login required",
+        description: "You must be logged in to upload a function.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!formData.name || !formData.runtime) {
+      toast({
+        title: "Missing fields",
+        description: "Please provide a name and select a runtime.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (uploadMode === "file" && !file) {
       toast({
         title: "No file selected",
@@ -99,7 +99,6 @@ export default function Upload() {
       });
       return;
     }
-
     if (uploadMode === "code" && !formData.code.trim()) {
       toast({
         title: "No code provided",
@@ -109,8 +108,81 @@ export default function Upload() {
       return;
     }
 
-    simulateUpload();
+    setUploading(true);
+    setUploadProgress(0);
+
+    try {
+      let response;
+      if (uploadMode === "file") {
+        // ---- FILE UPLOAD ----
+        const data = new FormData();
+        data.append("file", file);
+        data.append("name", formData.name);
+        data.append("runtime", formData.runtime);
+        data.append("description", formData.description || "");
+        data.append("userId", user.id);
+
+        response = await backendApi.upload(
+          `/api/functions/upload`,
+          data,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+            onUploadProgress: (progressEvent) => {
+              if (progressEvent.total) {
+                setUploadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+              }
+            },
+          }
+        );
+      } else {
+        // ---- CODE UPLOAD ----
+        // Using multipart to support large code/text
+        const data = new FormData();
+        data.append("code", formData.code);
+        data.append("name", formData.name);
+        data.append("runtime", formData.runtime);
+        data.append("description", formData.description || "");
+        data.append("userId", user.id);
+
+        response = await backendApi.upload(
+          `/api/functions/uploadText`,
+          data,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+            onUploadProgress: (progressEvent) => {
+              if (progressEvent.total) {
+                setUploadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+              }
+            },
+          }
+        );
+      }
+
+      // On success:
+      setUploading(false);
+      setUploadProgress(100);
+      toast({
+        title: "Upload successful!",
+        description: `Function "${formData.name}" has been uploaded successfully.`,
+      });
+      setFormData({ name: "", runtime: "", description: "", commandLineArgs: "", code: "" });
+      setFile(null);
+
+    } catch (err) {
+      setUploading(false);
+      setUploadProgress(0);
+      toast({
+        title: "Upload failed",
+        description:
+          err?.response?.data?.message ||
+          err?.response?.data ||
+          err?.message ||
+          "Could not upload the function.",
+        variant: "destructive",
+      });
+    }
   };
+
 
   const getFileIcon = () => {
     if (!file) return <UploadIcon className="h-8 w-8 text-muted-foreground" />;

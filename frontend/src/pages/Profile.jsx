@@ -6,16 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Badge } from "../components/ui/badge";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { AppLayout } from "../components/layout/AppLayout";
-import { User, Mail, Shield, Calendar, Edit2, Save, X } from "lucide-react";
+import { User, Mail, Shield, Calendar } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import { api } from "../lib/api";
-import { useAuth } from "../context/AuthContext";
 
 export default function Profile() {
-  const { user, token } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState(null);
-  const [formData, setFormData] = useState({ username: "", email: "" });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -23,13 +19,8 @@ export default function Profile() {
     async function fetchProfile() {
       try {
         setLoading(true);
-        // Get current user profile from backend
         const data = await api.get("/api/users/me");
         setProfile(data);
-        setFormData({
-          username: data.username || "",
-          email: data.email || "",
-        });
       } catch (err) {
         toast({
           title: "Failed to load profile",
@@ -43,45 +34,6 @@ export default function Profile() {
     fetchProfile();
     // eslint-disable-next-line
   }, []);
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  // Saving/updating profile logic (update as needed)
-  const handleSave = async () => {
-    try {
-      // You can update this endpoint to your backend's update profile logic
-      // For now, just set local state (no backend PATCH/PUT logic yet)
-      setProfile((prev) => ({
-        ...prev,
-        username: formData.username,
-        email: formData.email,
-      }));
-      toast({
-        title: "Profile updated",
-        description: "Your profile info was updated locally.",
-      });
-      setIsEditing(false);
-    } catch (err) {
-      toast({
-        title: "Update failed",
-        description: err?.response?.data?.message || "Could not update profile.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleCancel = () => {
-    setFormData({
-      username: profile.username,
-      email: profile.email,
-    });
-    setIsEditing(false);
-  };
 
   if (loading) {
     return (
@@ -103,12 +55,10 @@ export default function Profile() {
     );
   }
 
-  // Stats: Replace with real data if you have endpoints for these!
-  const functionsUploaded = 12;
+  const functionsUploaded = 12;    // Replace with real data if available
   const totalExecutions = 156;
   const successRate = "99.2%";
 
-  // Join date, if available
   const joinDate = profile.createdAt
     ? new Date(profile.createdAt).toLocaleDateString()
     : "N/A";
@@ -128,37 +78,10 @@ export default function Profile() {
           {/* Profile Card */}
           <Card className="lg:col-span-2 shadow-card border-0">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-primary" />
-                  Profile Information
-                </CardTitle>
-                {!isEditing ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsEditing(true)}
-                  >
-                    <Edit2 className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                ) : (
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={handleCancel}>
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={handleSave}
-                      className="bg-gradient-primary hover:opacity-90"
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      Save
-                    </Button>
-                  </div>
-                )}
-              </div>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                Profile Information
+              </CardTitle>
               <CardDescription>
                 Your personal information and account details
               </CardDescription>
@@ -189,33 +112,25 @@ export default function Profile() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="username">Username</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="username"
-                      name="username"
-                      value={formData.username}
-                      onChange={handleChange}
-                      disabled={!isEditing}
-                      className="pl-10"
-                    />
-                  </div>
+                  <Input
+                    id="username"
+                    name="username"
+                    value={profile.username}
+                    readOnly
+                    className="pl-10 bg-muted"
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      disabled={!isEditing}
-                      className="pl-10"
-                    />
-                  </div>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={profile.email}
+                    readOnly
+                    className="pl-10 bg-muted"
+                  />
                 </div>
               </div>
 
@@ -250,12 +165,10 @@ export default function Profile() {
                 <div className="text-2xl font-bold text-primary">{functionsUploaded}</div>
                 <div className="text-sm text-muted-foreground">Functions Uploaded</div>
               </div>
-              
               <div className="text-center p-4 bg-accent/10 rounded-lg">
                 <div className="text-2xl font-bold text-accent-foreground">{totalExecutions}</div>
                 <div className="text-sm text-muted-foreground">Total Executions</div>
               </div>
-
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <div className="text-2xl font-bold text-green-600">{successRate}</div>
                 <div className="text-sm text-muted-foreground">Success Rate</div>
@@ -264,7 +177,7 @@ export default function Profile() {
           </Card>
         </div>
 
-        {/* Action Buttons */}
+        {/* Danger Zone */}
         <Card className="shadow-card border-0">
           <CardHeader>
             <CardTitle className="text-destructive">Danger Zone</CardTitle>
@@ -273,7 +186,7 @@ export default function Profile() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="destructive" className="w-full sm:w-auto">
+            <Button variant="destructive" className="w-full sm:w-auto" disabled>
               Delete Account
             </Button>
           </CardContent>

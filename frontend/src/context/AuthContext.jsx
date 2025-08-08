@@ -30,20 +30,19 @@ export function AuthProvider({ children }) {
 
       // resp: { token, username, roles }
       setToken(resp.token);
-      setUser({
-        username: resp.username,
-        roles: Array.isArray(resp.roles)
-          ? resp.roles.map(r => r.authority || r) // Support both string and object
-          : [],
-      });
+      const profile = await api.get("/api/users/me");
+
+      const userObj = {
+        id: profile.id,
+        username: profile.username,
+        email: profile.email,
+        roles: profile.role ? [profile.role] : [],
+        status: profile.status,
+      };
+      setUser(userObj);
 
       localStorage.setItem("token", resp.token);
-      localStorage.setItem("user", JSON.stringify({
-        username: resp.username,
-        roles: Array.isArray(resp.roles)
-          ? resp.roles.map(r => r.authority || r)
-          : [],
-      }));
+      localStorage.setItem("user", JSON.stringify(userObj));
       setLoading(false);
       return { success: true };
     } catch (err) {
@@ -67,23 +66,19 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     async function fetchProfile() {
       // Only fetch if token exists but no user loaded
-      if (token && !user) {
+      if (token && (!user || !user.id)) {
         try {
           const resp = await api.get("/api/users/me");
-          setUser({
-            username: resp.username,
-            roles: resp.role ? [resp.role] : [], // if resp.role is a string
-            email: resp.email,
+          const userObj = {
             id: resp.id,
-            status: resp.status,
-          });
-          localStorage.setItem("user", JSON.stringify({
             username: resp.username,
+            email: resp.email,
             roles: resp.role ? [resp.role] : [],
-            email: resp.email,
-            id: resp.id,
             status: resp.status,
-          }));
+          };
+          setUser(userObj);
+
+          localStorage.setItem("user", JSON.stringify(userObj));
         } catch (e) {
           logout();
         }
@@ -108,6 +103,7 @@ export function AuthProvider({ children }) {
       user,
       loading,
       login,
+      setUser,
       logout,
       isAdmin,
       isUser,

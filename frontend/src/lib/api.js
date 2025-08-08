@@ -1,64 +1,75 @@
 import axios from "axios";
 
-// Backend base URL
-const BASE_URL = "http://localhost:8081";
+// ==== BASE URLs ====
+const BASE_URL = "http://localhost:8081";       // Middleware (auth, users, etc.)
+export const BACKEND_BASE = "http://localhost:8080"; // Backend (functions, uploads, etc.)
 
-// Always use "token" as the localStorage key for JWT
+// ==== JWT TOKEN ====
 function getToken() {
   return localStorage.getItem("token");
 }
 
-// Create an Axios instance
-const apiClient = axios.create({
-  baseURL: BASE_URL,
-  // timeout: 10000, // optional
-});
+// ==== AXIOS CLIENTS ====
 
-// Request interceptor: Attach JWT if present
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = getToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// --- Middleware Client (8081) ---
+const middlewareClient = axios.create({ baseURL: BASE_URL });
 
-// Response interceptor: Handle auth errors ONLY if token is present
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const token = getToken();
-    if (
-      error.response &&
-      (error.response.status === 401 || error.response.status === 403) &&
-      token // Only force logout if token exists
-    ) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
+// --- Backend Client (8080) ---
+const backendClient = axios.create({ baseURL: BACKEND_BASE });
+
+// ==== INTERCEPTORS (JWT & 401 handling) ====
+
+function attachAuthHeader(config) {
+  const token = getToken();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+}
+
+// Add to both clients:
+middlewareClient.interceptors.request.use(attachAuthHeader, (error) => Promise.reject(error));
+backendClient.interceptors.request.use(attachAuthHeader, (error) => Promise.reject(error));
+
+function handleAuthError(error) {
+  const token = getToken();
+  if (
+    error.response &&
+    (error.response.status === 401 || error.response.status === 403) &&
+    token
+  ) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/login";
   }
+  return Promise.reject(error);
+}
+
+middlewareClient.interceptors.response.use(
+  (response) => response,
+  handleAuthError
+);
+backendClient.interceptors.response.use(
+  (response) => response,
+  handleAuthError
 );
 
-// Helper: unwrap response data
+// ==== HELPER ====
 function unwrap(res) {
   return res.data;
 }
 
-// Exported API functions
-export const api = {
-  get: (url, params) => apiClient.get(url, { params }).then(unwrap),
-  post: (url, data, config = {}) => apiClient.post(url, data, config).then(unwrap),
-  put: (url, data, config = {}) => apiClient.put(url, data, config).then(unwrap),
-  delete: (url, config = {}) => apiClient.delete(url, config).then(unwrap),
+// ==== EXPORTED API ====
 
-  // File upload
+// For middleware (8081)
+export const api = {
+  get: (url, params) => middlewareClient.get(url, { params }).then(unwrap),
+  post: (url, data, config = {}) => middlewareClient.post(url, data, config).then(unwrap),
+  put: (url, data, config = {}) => middlewareClient.put(url, data, config).then(unwrap),
+  delete: (url, config = {}) => middlewareClient.delete(url, config).then(unwrap),
+  patch: (url, data, config = {}) => middlewareClient.patch(url, data, config).then(unwrap),
+
+  // File upload (middleware, if needed)
   upload: (url, formData, config = {}) =>
-    apiClient
+    middlewareClient
       .post(url, formData, {
         ...config,
         headers: {
@@ -69,5 +80,26 @@ export const api = {
       .then(unwrap),
 };
 
-// Optional: export apiClient for advanced usage
-export default apiClient;
+// For backend (8080)
+export const backendApi = {
+  get: (url, params) => backendClient.get(url, { params }).then(unwrap),
+  post: (url, data, config = {}) => backendClient.post(url, data, config).then(unwrap),
+  put: (url, data, config = {}) => backendClient.put(url, data, config).then(unwrap),
+  delete: (url, config = {}) => backendClient.delete(url, config).then(unwrap),
+  patch: (url, data, config = {}) => backendClient.patch(url, data, config).then(unwrap),
+
+  // File upload (backend)
+  upload: (url, formData, config = {}) =>
+    backendClient
+      .post(url, formData, {
+        ...config,
+        headers: {
+          ...(config.headers || {}),
+          // Axios will set content-type automatically for FormData
+        },
+      })
+      .then(unwrap),
+};
+
+// For advanced/low-level use (optional, not needed for most apps)
+export { middlewareClient, backendClient };
