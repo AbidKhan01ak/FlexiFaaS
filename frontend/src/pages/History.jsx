@@ -19,9 +19,19 @@ import {
 } from "../components/ui/table";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "../components/ui/alert-dialog";
+import {
   Search,
-  Calendar,
-  Filter,
+  PowerOff,
+  Power,
   Play,
   Trash2,
   Eye,
@@ -44,13 +54,22 @@ export default function History() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFunction, setSelectedFunction] = useState(null);
   const [showExecutionModal, setShowExecutionModal] = useState(false);
-  const { toast } = useToast();
 
   const [functions, setFunctions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showLogsModal, setShowLogsModal] = useState(false);
   const [selectedFunctionId, setSelectedFunctionId] = useState(null);
+
+  // delete dialog
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // status dialog
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [statusTarget, setStatusTarget] = useState(null);
+
   const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     async function fetchFunctions() {
@@ -83,27 +102,38 @@ export default function History() {
   );
 
   const getStatusBadge = (status) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
+      case "active":
+        return (
+          <Badge className="!bg-blue-100 !text-blue-700 !hover:bg-blue-100 border border-blue-300">
+            ACTIVE
+          </Badge>
+        );
+      case "dead":
+        return (
+          <Badge className="!bg-gray-800 !text-white-700 !hover:bg-gray-100 border border-gray-300">
+            DEAD
+          </Badge>
+        );
       case "success":
         return (
-          <Badge
-            variant="secondary"
-            className="bg-green-100 text-green-700 hover:bg-green-100"
-          >
+          <Badge className="!bg-green-100 !text-green-700 !hover:bg-green-100 border border-green-300">
             Success
           </Badge>
         );
-      case "running":
+      case "error":
         return (
-          <Badge
-            variant="secondary"
-            className="bg-blue-100 text-blue-700 hover:bg-blue-100"
-          >
-            Running
+          <Badge className="!bg-orange-100 !text-orange-700 !hover:bg-orange-100 border border-orange-300">
+            Error
           </Badge>
         );
+
       case "failed":
-        return <Badge variant="destructive">Failed</Badge>;
+        return (
+          <Badge className="!bg-red-100 !text-red-700 !hover:bg-red-100 border border-red-300">
+            Failed
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -117,6 +147,89 @@ export default function History() {
   const handleViewDetails = (functionId) => {
     setSelectedFunctionId(functionId);
     setShowLogsModal(true);
+  };
+  const askDelete = (func) => {
+    setDeleteTarget({ id: func.id, name: func.name });
+    setDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget?.id) return;
+    try {
+      await backendApi.delete(`/api/functions/${deleteTarget.id}`);
+      setFunctions((prev) => prev.filter((f) => f.id !== deleteTarget.id));
+      toast({
+        title: "Function deleted",
+        description: `Function "${deleteTarget.name}" has been removed.`,
+      });
+    } catch (err) {
+      toast({
+        title: "Delete failed",
+        description:
+          err?.response?.data?.message || "Could not delete the function.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteOpen(false);
+      setDeleteTarget(null);
+    }
+  };
+
+  // —— Status toggle helpers ——
+  const askToggleStatus = (func) => {
+    const current = (func.status || "").toUpperCase();
+    const nextStatus = current === "ACTIVE" ? "DEAD" : "ACTIVE";
+    setStatusTarget({ id: func.id, name: func.name, nextStatus });
+    setStatusOpen(true);
+  };
+
+  const persistStatus = async (id, status) => {
+    // Placeholder: try a PUT to existing endpoint with full DTO if you add support.
+    try {
+      const res = await backendApi.patch(`/api/functions/${id}/status`, {
+        status,
+      });
+
+      // Optional: update local state immediately if backend returns updated function
+      if (res && res.id) {
+        setFunctions((prev) =>
+          prev.map((f) => (f.id === id ? { ...f, status: res.status } : f))
+        );
+      }
+
+      toast({
+        title: "Status updated",
+        description: `Function status set to "${status}".`,
+      });
+    } catch (err) {
+      toast({
+        title: "Failed to update status",
+        description:
+          err?.response?.data?.message ||
+          "An error occurred while updating status.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const confirmToggleStatus = async () => {
+    if (!statusTarget?.id) return;
+    const { id, name, nextStatus } = statusTarget;
+
+    // Optimistic UI update
+    setFunctions((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, status: nextStatus } : f))
+    );
+
+    // Try to persist (won’t work until backend exists)
+    await persistStatus(id, nextStatus);
+
+    toast({
+      title: `Marked as ${nextStatus}`,
+    });
+
+    setStatusOpen(false);
+    setStatusTarget(null);
   };
 
   if (loading) {
@@ -224,6 +337,29 @@ export default function History() {
                               <Play className="h-4 w-4 mr-2" />
                               Execute
                             </DropdownMenuItem>
+                            {/* Toggle status */}
+                            {(func.status || "").toUpperCase() === "ACTIVE" ? (
+                              <DropdownMenuItem
+                                onClick={() => askToggleStatus(func)}
+                              >
+                                <PowerOff className="h-4 w-4 mr-2" />
+                                Mark as Dead
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                onClick={() => askToggleStatus(func)}
+                              >
+                                <Power className="h-4 w-4 mr-2" />
+                                Mark as Active
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => askDelete(func)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -263,6 +399,61 @@ export default function History() {
           onClose={() => setShowLogsModal(false)}
           functionId={selectedFunctionId}
         />
+
+        {/* Delete Confirmation */}
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete function?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete{" "}
+                <span className="font-medium">
+                  {deleteTarget?.name || "this function"}
+                </span>{" "}
+                and remove its file from the server (if implemented).
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-white hover:bg-destructive/90"
+                onClick={confirmDelete}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Status Confirmation */}
+        <AlertDialog open={statusOpen} onOpenChange={setStatusOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Change function status?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Set{" "}
+                <span className="font-medium">
+                  {statusTarget?.name || "this function"}
+                </span>{" "}
+                to{" "}
+                <span className="font-semibold">
+                  {statusTarget?.nextStatus}
+                </span>
+                .{/* eslint-disable-next-line */}
+                <br />
+                This updates the UI immediately. Add a backend endpoint to
+                persist.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmToggleStatus}>
+                Apply
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   );

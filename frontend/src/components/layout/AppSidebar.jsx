@@ -1,4 +1,13 @@
-import { Home, Upload, History, User, LogOut } from "lucide-react";
+import {
+  Home,
+  Upload,
+  History,
+  User as UserIcon,
+  LogOut,
+  Users,
+  FileStack,
+  ListChecks,
+} from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -14,29 +23,44 @@ import {
 } from "../ui/sidebar";
 import { Button } from "../ui/button";
 import { useToast } from "../../hooks/use-toast";
+import { useAuth } from "../../context/AuthContext";
 
 const navigationItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Upload Function", url: "/upload", icon: Upload },
   { title: "Function History", url: "/history", icon: History },
-  { title: "Profile", url: "/profile", icon: User },
+  { title: "Profile", url: "/profile", icon: UserIcon },
+];
+
+const adminNavigationItems = [
+  { title: "All Users", url: "/admin/users", icon: Users },
+  { title: "All Functions", url: "/admin/functions", icon: FileStack },
+  { title: "Execution Logs", url: "/admin/logs", icon: ListChecks },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
-  const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const currentPath = location.pathname;
+  const { user, logout, isAdmin: ctxIsAdmin } = useAuth();
+
   const collapsed = state === "collapsed";
 
-  const isActive = (path) => currentPath === path;
+  // Prefer context helper if available; otherwise fallback to robust role check.
+  const fallbackIsAdmin = (roles) =>
+    (roles || []).some((r) => String(r).toUpperCase().includes("ADMIN"));
+  const isAdmin =
+    typeof ctxIsAdmin === "function"
+      ? ctxIsAdmin()
+      : fallbackIsAdmin(user?.roles);
+
   const getNavCls = ({ isActive }) =>
     isActive
       ? "bg-primary text-black font-medium shadow-md"
       : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors";
 
   const handleLogout = () => {
+    logout(); // clear token & user
     toast({
       title: "Logged out",
       description: "You have been successfully logged out.",
@@ -54,13 +78,16 @@ export function AppSidebar() {
           {!collapsed && (
             <div>
               <h2 className="font-bold text-lg text-foreground">FlexiFaaS</h2>
-              <p className="text-xs text-muted-foreground">Effortless Serverless</p>
+              <p className="text-xs text-muted-foreground">
+                Effortless Serverless
+              </p>
             </div>
           )}
         </div>
       </SidebarHeader>
 
       <SidebarContent>
+        {/* Main nav */}
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -78,6 +105,27 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Admin-only nav */}
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminNavigationItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink to={item.url} className={getNavCls}>
+                        <item.icon className="h-4 w-4" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <div className="mt-auto p-4">
           <Button

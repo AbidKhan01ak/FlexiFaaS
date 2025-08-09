@@ -135,25 +135,32 @@ public class FunctionServiceImpl implements FunctionService {
         }
         return dtos;
     }
-
     @Override
-    public FunctionDTO updateFunction(FunctionDTO functionDTO, Long functionId) {
-        Function function = functionRepository.findById(functionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Function not found with ID: " + functionId));
+    public FunctionDTO updateStatus(Long id, String status) {
+        if (status == null) throw new IllegalArgumentException("status is required");
+        String s = status.toUpperCase();
+        if (!s.equals("ACTIVE") && !s.equals("DEAD")) {
+            throw new IllegalArgumentException("Invalid status: " + status);
+        }
 
-        function.setName(functionDTO.getName());
-        function.setDescription(functionDTO.getDescription());
+        Function function = functionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Function not found with ID: " + id));
+
+        function.setStatus(s);
         function.setLastModified(new Timestamp(System.currentTimeMillis()));
         functionRepository.save(function);
 
-        functionDTO.setId(function.getId());
-        functionDTO.setVersion(function.getVersion());
-        functionDTO.setUploadTime(function.getUploadTime());
-        functionDTO.setLastModified(function.getLastModified());
-        functionDTO.setStatus(function.getStatus());
-        functionDTO.setOwnerId(function.getOwner().getId());
-
-        return functionDTO;
+        FunctionDTO dto = new FunctionDTO();
+        dto.setId(function.getId());
+        dto.setName(function.getName());
+        dto.setRuntime(function.getRuntime());
+        dto.setVersion(function.getVersion());
+        dto.setDescription(function.getDescription());
+        dto.setStatus(function.getStatus());
+        dto.setUploadTime(function.getUploadTime());
+        dto.setLastModified(function.getLastModified());
+        dto.setOwnerId(function.getOwner().getId());
+        return dto;
     }
 
     @Override

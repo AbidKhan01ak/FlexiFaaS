@@ -76,7 +76,6 @@ export default function Dashboard() {
         let activeJobs = (data || []).filter(
           (func) => String(func.status).toUpperCase() === "ACTIVE"
         ).length;
-
         setStats({
           totalFunctions: functions.length,
           activeJobs,

@@ -11,7 +11,7 @@ public interface FunctionService {
     FunctionDTO getFunctionById(Long id);
     List<FunctionDTO> getFunctionsByUser(Long userId);
     List<FunctionDTO> getAllFunctions();
-    FunctionDTO updateFunction(FunctionDTO functionDTO, Long functionId);
+    FunctionDTO updateStatus(Long id, String status);
     void deleteFunction(Long functionId);
     FunctionExecutionResponse executeFunction(Long functionId, Long userId, String inputPayload);
 

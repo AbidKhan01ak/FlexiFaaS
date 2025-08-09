@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/functions")
@@ -90,17 +91,16 @@ public class FunctionController {
         return ResponseEntity.ok(functions);
     }
 
-    // Update function (basic fields)
-    @PutMapping("/{id}")
-    public ResponseEntity<FunctionDTO> updateFunction(
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<FunctionDTO> updateStatus(
             @PathVariable Long id,
-            @RequestBody FunctionDTO dto
+            @RequestBody Map<String, String> body
     ) {
-        FunctionDTO updated = functionService.updateFunction(dto, id);
-        if (updated == null)
-            return ResponseEntity.notFound().build();
+        String status = body.get("status");
+        FunctionDTO updated = functionService.updateStatus(id, status);
         return ResponseEntity.ok(updated);
     }
+
 
     // Delete function by ID
     @DeleteMapping("/{id}")

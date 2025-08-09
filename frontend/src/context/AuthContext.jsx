@@ -5,6 +5,12 @@ import { api } from "../lib/api";
 // 1. Create AuthContext
 const AuthContext = createContext();
 
+function normalizeRoles(raw) {
+  if (!raw) return [];
+  const arr = Array.isArray(raw) ? raw : [raw];
+  return arr.filter(Boolean).map((r) => String(r).toUpperCase());
+}
+
 // 2. Provider Component
 export function AuthProvider({ children }) {
   // Persist auth state
@@ -33,12 +39,13 @@ export function AuthProvider({ children }) {
       localStorage.setItem("token", resp.token);
 
       const profile = await api.get("/api/users/me");
+      const roles = normalizeRoles(profile.roles ?? profile.role ?? resp.roles);
 
       const userObj = {
         id: profile.id,
         username: profile.username,
         email: profile.email,
-        roles: profile.role ? [profile.role] : [],
+        roles,
         status: profile.status,
       };
       setUser(userObj);
@@ -63,39 +70,15 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("user");
   }
 
-  // --- Fetch Profile on Reload or if not in state ---
-  // useEffect(() => {
-  //   async function fetchProfile() {
-  //     // Only fetch if token exists but no user loaded
-  //     if (token && (!user || !user.id)) {
-  //       try {
-  //         const resp = await api.get("/api/users/me");
-  //         console.log(resp);
-  //         const userObj = {
-  //           id: resp.id,
-  //           username: resp.username,
-  //           email: resp.email,
-  //           roles: resp.role ? [resp.role] : [],
-  //           status: resp.status,
-  //         };
-  //         setUser(userObj);
-
-  //         localStorage.setItem("user", JSON.stringify(userObj));
-  //       } catch (e) {
-  //         logout();
-  //       }
-  //     }
-  //   }
-  //   fetchProfile();
-  //   // eslint-disable-next-line
-  // }, [token]);
-
   // --- Role Helpers ---
   function isAdmin() {
-    return user?.roles?.includes("ROLE_ADMIN");
+    const roles = user?.roles || [];
+    // robust check: works for "ROLE_ADMIN" or "ADMIN"
+    return roles.includes("ROLE_ADMIN") || roles.includes("ADMIN");
   }
   function isUser() {
-    return user?.roles?.includes("ROLE_USER") || isAdmin();
+    const roles = user?.roles || [];
+    return roles.includes("ROLE_USER") || isAdmin();
   }
 
   // --- Context Value ---
