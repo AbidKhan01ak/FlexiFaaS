@@ -49,8 +49,7 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 
 - Login & Registration
   ![](./docs/screenshots/registration.png)
-  ![](./docs/screenshots/login.png)
-  ![](./docs/screenshots/login2.png)
+  ![](./docs/screenshots/login.2png.png)
 - Function Upload Page
 - Execution History & Logs
 - Admin Dashboard
