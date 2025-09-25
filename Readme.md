@@ -67,10 +67,12 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 
 ## 📂 Project Structure
 
+```
 | - /backend
 | - /middleware
 | - /frontend
 | - /docs
+```
 
 ---
 
