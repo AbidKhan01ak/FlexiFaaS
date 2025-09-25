@@ -14,9 +14,14 @@ The middleware is a standalone Spring Boot service that ensures **security and p
 
 ---
 
-## 🔄 Workflow
+## 🔄 Workflows
 
-![Middleware Workflow](../docs/images/middleware-workflow.png)
+- JWT workflow
+  ![Middleware JWT Workflow](../docs/middleware-jwt-auth-sequence.png)
+- Encrption/Decryption  
+  ![Middleware Encryption/Decryption Workflow](../docs/middleware-encry-decrypt-sequence.png)
+- Malware Scan
+  ![Middleware Malware scan Workflow](../docs/middleware-malwarescan-sequence.png)
 
 1. User request hits middleware
 2. JWT validated → Role checked
@@ -26,9 +31,9 @@ The middleware is a standalone Spring Boot service that ensures **security and p
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Middleware Class Diagram
 
-![Middleware Architecture](../docs/images/middleware-architecture.png)
+![Middleware Class Diagram](../docs/middlware-class-diagram.png)
 
 - Runs as Spring Boot app on **port 8081**
 - Intercepts all API requests
