@@ -19,7 +19,7 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 
 ## 🏗️ Architecture
 
-![System Architecture](./docs/images/system-architecture.png)
+![System Architecture](./docs/system-architecture.png)
 
 - **Frontend** → ReactJS client
 - **Middleware** → Authentication, authorization, encryption, malware scan
@@ -31,7 +31,7 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 
 ## 🔄 Workflow
 
-![Workflow](./docs/images/workflow.png)
+![Workflow](./docs/workflow.png)
 
 1. User registers & logs in
 2. Uploads a function (file/code)
