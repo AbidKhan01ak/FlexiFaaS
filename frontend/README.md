@@ -1,6 +1,21 @@
 # FlexiFaaS Frontend
 
+![React](https://img.shields.io/badge/React-18-blue)
+![Axios](https://img.shields.io/badge/Axios-HTTP%20Client-green)
+![Bootstrap](https://img.shields.io/badge/Bootstrap-5-purple)
+![JWT](https://img.shields.io/badge/Auth-JWT-orange)
+
 The frontend is a **ReactJS application** that provides a user-friendly interface for interacting with FlexiFaaS.
+
+---
+
+## 📑 Table of Contents
+
+- [Features](#-features)
+- [UI Screens](#-ui-screens)
+- [Project Structure](#-structure)
+- [Tech Stack](#-tech-stack)
+- [Workflow](#-workflow)
 
 ---
 
@@ -14,9 +29,7 @@ The frontend is a **ReactJS application** that provides a user-friendly interfac
 
 ---
 
-## 🖥️ UI Screens
-
-![Frontend UI](../docs/images/frontend-ui.png)
+## 🖥️ UI
 
 - Login / Signup
 - Dashboard
@@ -51,8 +64,6 @@ The frontend is a **ReactJS application** that provides a user-friendly interfac
 ---
 
 ## 🔄 Workflow
-
-![Frontend Workflow](../docs/images/frontend-workflow.png)
 
 1. User logs in → JWT stored in local/session storage
 2. Uploads function → API call to middleware

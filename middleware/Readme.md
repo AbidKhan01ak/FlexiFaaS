@@ -1,6 +1,21 @@
 # FlexiFaaS Middleware Service
 
+![Java](https://img.shields.io/badge/Java-17-blue)
+![SpringBoot](https://img.shields.io/badge/SpringBoot-Security-green)
+![JWT](https://img.shields.io/badge/JWT-Authentication-red)
+![AES](https://img.shields.io/badge/AES-Encryption-yellow)
+
 The middleware is a standalone Spring Boot service that ensures **security and preprocessing** of execution requests before they reach the backend.
+
+---
+
+## 📑 Table of Contents
+
+- [Responsibilities](#-responsibilities)
+- [Workflows](#-workflows)
+- [Middleware Class Diagram](#️-middleware-class-diagram)
+- [Project Structure](#-structure)
+- [Tech Stack](#-tech)
 
 ---
 

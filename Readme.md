@@ -1,8 +1,29 @@
 # FlexiFaaS – Serverless Function Deployment Engine
 
+![Java](https://img.shields.io/badge/Java-17-blue)
+![SpringBoot](https://img.shields.io/badge/SpringBoot-3.x-green)
+![React](https://img.shields.io/badge/React-18-blue)
+![MySQL](https://img.shields.io/badge/MySQL-8-orange)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-latest-red)
+
 FlexiFaaS is a secure, scalable, and modular Function-as-a-Service (FaaS) platform that allows users to upload, execute, and manage functions in multiple programming languages (Java, Python, JavaScript) without managing backend infrastructure.
 
 The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pilani**.
+
+---
+
+## 📑 Table of Contents
+
+- [Features](#features)
+- [Architecture](#architecture)
+- [Component Level Architecture](#component-level-architecture)
+- [Workflow](#workflow)
+- [Deployment Diagram](#deployment-diagram)
+- [Screenshots](#-screenshots)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Testing](#testing)
+- [Future Enhancements](#future-enhancements)
 
 ---
 

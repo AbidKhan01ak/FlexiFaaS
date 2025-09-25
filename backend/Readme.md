@@ -1,6 +1,21 @@
 # FlexiFaaS Backend Service
 
+![Java](https://img.shields.io/badge/Java-17-blue)
+![SpringBoot](https://img.shields.io/badge/SpringBoot-3.x-green)
+![MySQL](https://img.shields.io/badge/MySQL-8-orange)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-latest-red)
+
 The backend is the **execution engine** of FlexiFaaS. It manages function metadata, interacts with the database, and executes uploaded functions asynchronously via RabbitMQ.
+
+---
+
+## 📑 Table of Contents
+
+- [Responsibilities](#️-responsibilities)
+- [Function Lifecycle](#-function-lifecycle)
+- [Backend Class Diagram](#-backend-class-diagram)
+- [Project Structure](#-structure)
+- [Tech Stack](#-tech)
 
 ---
 
