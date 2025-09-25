@@ -47,12 +47,17 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 
 (Add actual screenshots in `docs/screenshots/` folder)
 
+![](./docs/screenshots/splashscreen.png)
+
 - Login & Registration
   ![](./docs/screenshots/registration.png)
 
   ![](./docs/screenshots/login.2png.png)
 
   ![](./docs/screenshots/dashboard.png)
+
+- User Profile
+  ![](./docs/screenshots/userprofile.png)
 
 - Function Upload Page
   ![](./docs/screenshots/functionUpload.png)
@@ -63,7 +68,12 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
   ![](./docs/screenshots/FunctionHistory.png)
   ![](./docs/screenshots/ExecutionLogs.png)
 
+- Function Active or Dead
+  ![](./docs/screenshots/ActiveOrDead.png)
+
 - Admin Dashboard
+  ![](./docs/screenshots/AdminDashboard.png)
+  ![](./docs/screenshots/AdminFunctionOverview.png)
 
 ---
 
