@@ -16,7 +16,7 @@ The backend is the **execution engine** of FlexiFaaS. It manages function metada
 
 ## 🔄 Function Lifecycle
 
-![Function Lifecycle](../docs/images/function-lifecycle.png)
+![Function Lifecycle](../docs/function-lifecycle.png)
 
 1. Function uploaded (file/code)
 2. Metadata stored in MySQL
@@ -27,9 +27,9 @@ The backend is the **execution engine** of FlexiFaaS. It manages function metada
 
 ---
 
-## 🏗️ Deployment Model
+## 🏗️ Backend Class Diagram
 
-![Deployment Model](../docs/images/deployment-model.png)
+![Deployment Model](../docs/backend-class-diagram.png)
 
 - Spring Boot app running on **port 8080**
 - Connected to **MySQL** & **RabbitMQ**

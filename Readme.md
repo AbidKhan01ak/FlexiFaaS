@@ -29,6 +29,12 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 
 ---
 
+## Component level Architecuture
+
+![Component-Level Architecture](./docs/component-level-architecture.png)
+
+---
+
 ## Workflow
 
 ![Workflow](./docs/workflow.png)
@@ -44,6 +50,12 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 9. Worker executes function in requested runtime
 10. Logs & results are stored in database
 11. User views results via frontend
+
+---
+
+## Deployment Diagram
+
+![Deployment Diagram](./docs/deployment-diagram.png)
 
 ---
 
