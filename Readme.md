@@ -34,12 +34,16 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 ![Workflow](./docs/workflow.png)
 
 1. User registers & logs in
-2. Uploads a function (file/code)
-3. Middleware validates & secures the request
-4. Function is queued in RabbitMQ
-5. Worker executes function in requested runtime
-6. Logs & results are stored in database
-7. User views results via frontend
+2. User Authentication from Middleware service
+3. Authenticated and Authorized
+4. Uploads a function (file/code)
+5. Backend service calls Middleware service for malware scan and encryption
+6. Middleware validates & secures the request
+7. Store function metadata and code in database
+8. Function is queued in RabbitMQ
+9. Worker executes function in requested runtime
+10. Logs & results are stored in database
+11. User views results via frontend
 
 ---
 
