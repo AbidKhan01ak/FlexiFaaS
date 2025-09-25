@@ -6,7 +6,7 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 
 ---
 
-## 🚀 Features
+## Features
 
 - Multi-language function execution (Java, Python, JavaScript)
 - Asynchronous, event-driven execution using RabbitMQ
@@ -17,7 +17,7 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ![System Architecture](./docs/system-architecture.png)
 
@@ -29,7 +29,7 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 
 ---
 
-## 🔄 Workflow
+## Workflow
 
 ![Workflow](./docs/workflow.png)
 
@@ -45,15 +45,15 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 
 ## 📸 Screenshots
 
-(Add actual screenshots in `docs/screenshots/` folder)
+- Splash Screen
 
-![](./docs/screenshots/splashscreen.png)
+  ![](./docs/screenshots/splashscreen.png)
 
-- Login & Registration
+- Registration
   ![](./docs/screenshots/registration.png)
-
+- Login
   ![](./docs/screenshots/login.2png.png)
-
+- Dashboard
   ![](./docs/screenshots/dashboard.png)
 
 - User Profile
@@ -63,9 +63,11 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
   ![](./docs/screenshots/functionUpload.png)
   ![](./docs/screenshots/functionUpload2.png)
 
-- Execution History & Logs
+- Function Execution
   ![](./docs/screenshots/FunctionExecution.png)
+- Function History
   ![](./docs/screenshots/FunctionHistory.png)
+- Execution Logs
   ![](./docs/screenshots/ExecutionLogs.png)
 
 - Function Active or Dead
@@ -77,7 +79,7 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 
 ---
 
-## ⚙️ Tech Stack
+## Tech Stack
 
 - **Backend:** Java 17, Spring Boot, Hibernate/JPA
 - **Middleware:** Spring Boot (JWT, AES, Security)
@@ -88,7 +90,7 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 | - /backend
@@ -99,7 +101,7 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 
 ---
 
-## 🧪 Testing
+## Testing
 
 - API Testing via Postman
 - Unit & Integration tests in Spring Boot
@@ -107,7 +109,7 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 
 ---
 
-## 📌 Future Enhancements
+## Future Enhancements
 
 - Support for more languages (Go, Ruby, PHP, C#)
 - Containerized & sandboxed execution
