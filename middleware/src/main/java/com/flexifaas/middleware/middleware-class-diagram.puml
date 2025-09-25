@@ -1,0 +1,23 @@
+@startuml
+title Function Lifecycle
+
+[*] --> UPLOADED : file upload
+UPLOADED --> SCANNED : malware scan OK
+UPLOADED --> REJECTED : malware found
+
+SCANNED --> ENCRYPTED : encrypt & save
+
+ENCRYPTED --> DECRYPTED : decrypt (when user executes)
+DECRYPTED --> QUEUED : job queued for execution
+
+QUEUED --> RUNNING : consumer starts execution
+RUNNING --> SUCCEEDED : execution completed OK
+RUNNING --> FAILED : error/exception
+
+SUCCEEDED --> LOGGED : log result
+FAILED --> LOGGED : log result
+
+REJECTED --> [*]
+LOGGED --> [*]
+
+@enduml

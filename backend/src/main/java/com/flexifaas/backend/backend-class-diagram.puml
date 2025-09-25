@@ -1,0 +1,130 @@
+@startuml
+title Backend – Class Diagram
+
+left to right direction
+skinparam shadowing false
+hide members
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+skinparam TitleFontSize 24
+skinparam TitleFontColor Black
+skinparam TitleFontStyle bold
+' === High Contrast Lines & Arrows ===
+skinparam ArrowColor Black
+skinparam ArrowThickness 2
+skinparam ClassBorderColor Black
+skinparam PackageBorderColor Black
+skinparam PackageBackgroundColor White
+skinparam ClassBackgroundColor White
+skinparam ClassFontColor Black
+skinparam ClassFontSize 14
+skinparam ArrowFontSize 12
+
+' ========= Packages / Classes =========
+package Config {
+  class RabbitMQConfig <<configuration>>
+}
+
+package Controller {
+  class UserController
+  class FunctionController
+  class ExecutionLogController
+}
+
+package DTO {
+  class UserDTO <<DTO>>
+  class FunctionDTO <<DTO>>
+  class ExecutionLogDTO <<DTO>>
+  class FunctionUploadRequest <<DTO>>
+  class FunctionExecutionRequest <<DTO>>
+  class FunctionExecutionResponse <<DTO>>
+  class MalwareScanResponse <<DTO>>
+}
+
+package Model {
+  class User
+  class Function
+  class ExecutionLog
+}
+
+package Repository {
+  interface UserRepository <<repository>>
+  interface FunctionRepository <<repository>>
+  interface ExecutionLogRepository <<repository>>
+}
+
+package Service {
+  interface UserService
+  interface FunctionService
+  interface ExecutionLogService
+}
+
+package "service.impl" as service_impl {
+  class UserServiceImpl
+  class FunctionServiceImpl
+  class ExecutionLogServiceImpl
+}
+
+package Rabbitmq {
+  class FunctionExecutionProducer <<messaging>>
+  class FunctionExecutionConsumer <<messaging>>
+}
+
+package util {
+  class MiddlewareCryptoClient <<utility>>
+  class ScanForMalware <<utility>>
+}
+
+
+' ========= Relationships =========
+
+' Controllers → Services
+UserController --> UserService
+FunctionController --> FunctionService
+ExecutionLogController --> ExecutionLogService
+
+' Services implemented by Impl
+UserServiceImpl ..|> UserService
+FunctionServiceImpl ..|> FunctionService
+ExecutionLogServiceImpl ..|> ExecutionLogService
+
+' Impl → Repositories / Utilities
+UserServiceImpl --> UserRepository
+FunctionServiceImpl --> FunctionRepository
+ExecutionLogServiceImpl --> ExecutionLogRepository
+
+FunctionServiceImpl ..> MiddlewareCryptoClient
+FunctionServiceImpl ..> ScanForMalware
+
+' Repositories → Entities
+UserRepository --> User
+FunctionRepository --> Function
+ExecutionLogRepository --> ExecutionLog
+
+' DTO usage (lightweight, representative)
+UserController ..> UserDTO
+FunctionController ..> FunctionDTO
+FunctionController ..> FunctionUploadRequest
+FunctionController ..> FunctionExecutionRequest
+FunctionService ..> FunctionExecutionResponse
+ExecutionLogController ..> ExecutionLogDTO
+util.ScanForMalware ..> MalwareScanResponse
+
+' Messaging flow (representative)
+FunctionService --> FunctionExecutionProducer : publishes
+FunctionExecutionProducer --> FunctionExecutionRequest
+FunctionExecutionConsumer --> FunctionExecutionResponse : produces
+FunctionExecutionConsumer --> ExecutionLogService : log status
+FunctionExecutionConsumer --> FunctionService : update status
+
+' Config wiring
+RabbitMQConfig <-. FunctionExecutionProducer
+RabbitMQConfig <-. FunctionExecutionConsumer
+
+
+' Entity relationships (high contrast)
+User "1" -[#000000,thickness=2]-> "0..*" Function : owns >
+Function "1" -[#000000,thickness=2]-> "0..*" ExecutionLog : produces >
+User "1" -[#000000,thickness=2]-> "0..*" ExecutionLog : writes >
+
+@enduml

@@ -13,7 +13,6 @@ import java.util.Base64;
 
 public class AesEncryptionUtil {
 
-    // 256-bit AES, GCM mode for modern security
     private static final String ALGORITHM = "AES";
     private static final String TRANSFORMATION = "AES/GCM/NoPadding";
     private static final int GCM_TAG_LENGTH = 16;

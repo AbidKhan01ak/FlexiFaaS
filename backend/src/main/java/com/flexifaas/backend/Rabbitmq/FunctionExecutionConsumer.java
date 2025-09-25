@@ -40,109 +40,104 @@ public class FunctionExecutionConsumer {
         Function function = functionRepository.findById(functionId).orElse(null);
         User user = userRepository.findById(userId).orElse(null);
 
-        String encryptedFilePath  = function != null ? function.getFilePath() : null;
-        String runtime = function != null ? function.getRuntime().toLowerCase() : null;
+        String encryptedFilePath  = (function != null) ? function.getFilePath() : null;
+        String runtimeRaw         = (function != null && function.getRuntime() != null)
+                ? function.getRuntime().toLowerCase().trim()
+                : null;
+
         String output = null;
-        String error = null;
+        String error  = null;
         String status = "SUCCESS";
         Timestamp execTime = new Timestamp(System.currentTimeMillis());
 
         File tempDir = null;
+        File srcDir  = null;
+        File outDir  = null;
         File codeFile = null;
 
         try {
-            // DECRYPT FILE
-            assert encryptedFilePath != null;
+            if (encryptedFilePath == null) {
+                throw new IllegalStateException("Function file path is null");
+            }
             File encryptedFile = new File(encryptedFilePath);
 
-            byte[] decryptedBytes;
-            if (encryptedFilePath.endsWith(".py.enc") || encryptedFilePath.endsWith(".js.enc") || encryptedFilePath.endsWith(".java.enc") || encryptedFilePath.endsWith(".txt.enc")) {
-                // Try base64 decode (from /uploadText)
-                decryptedBytes = MiddlewareCryptoClient.decryptTextFileAsCode(encryptedFile);
-            } else {
-                // Normal file upload
-                decryptedBytes = MiddlewareCryptoClient.decryptFile(encryptedFile);
-            }
+            // ---------- Robust decrypt: try binary, then text ----------
+            byte[] decryptedBytes = robustDecrypt(encryptedFile);
 
-            // Prepare arg list
+            // ---------- Build arg list from payload (whitespace-separated) ----------
             List<String> argList = new ArrayList<>();
             if (inputPayload != null && !inputPayload.trim().isEmpty()) {
                 String[] parts = inputPayload.trim().split("\\s+");
                 for (String part : parts) {
-                    argList.add(part);
+                    if (!part.isEmpty()) argList.add(part);
                 }
             }
 
+            // ---------- Normalize runtime ----------
+            String runtime = normalizeRuntime(runtimeRaw);
+
             if ("java".equals(runtime)) {
-                // Extract public class name
-                String javaCode = new String(decryptedBytes, StandardCharsets.UTF_8);
-                Pattern classPattern = Pattern.compile("public\\s+class\\s+(\\w+)");
-                Matcher matcher = classPattern.matcher(javaCode);
-                String className = null;
-                if (matcher.find()) {
-                    className = matcher.group(1);
-                } else {
-                    throw new RuntimeException("Could not determine public class name from Java file");
+                // Read source as string for package/class parsing
+                String javaSource = new String(decryptedBytes, StandardCharsets.UTF_8);
+
+                // Basic sanity check
+                if (!javaSource.contains("class")) {
+                    throw new RuntimeException("Decryption succeeded but content doesn't look like Java source.");
                 }
 
-                // Create temp dir & write file
+                JavaClassInfo info = extractJavaClassInfo(javaSource);
+                if (info.className == null) {
+                    throw new RuntimeException("Could not determine public class name from Java file.");
+                }
+
+                // temp structure: tempDir/src/...  & tempDir/bin
                 tempDir = Files.createTempDirectory("java_exec_").toFile();
                 tempDir.deleteOnExit();
-                codeFile = new File(tempDir, className + ".java");
+                srcDir = new File(tempDir, "src");
+                outDir = new File(tempDir, "bin");
+                srcDir.mkdirs();
+                outDir.mkdirs();
+                srcDir.deleteOnExit();
+                outDir.deleteOnExit();
+
+                // If package present, mirror folders under src
+                File packageDir = (info.packageName != null)
+                        ? new File(srcDir, info.packageName.replace('.', File.separatorChar))
+                        : srcDir;
+                packageDir.mkdirs();
+
+                codeFile = new File(packageDir, info.className + ".java");
                 try (FileOutputStream fos = new FileOutputStream(codeFile)) {
                     fos.write(decryptedBytes);
                 }
                 codeFile.deleteOnExit();
 
-                // Compile
-                ProcessBuilder compilePb = new ProcessBuilder("javac", codeFile.getName());
-                compilePb.directory(tempDir);
-                Process compileProcess = compilePb.start();
-                int compileResult = compileProcess.waitFor();
-                if (compileResult != 0) {
-                    BufferedReader compileErrorReader = new BufferedReader(new InputStreamReader(compileProcess.getErrorStream()));
-                    StringBuilder compileErr = new StringBuilder();
-                    String compileLine;
-                    while ((compileLine = compileErrorReader.readLine()) != null) {
-                        compileErr.append(compileLine).append("\n");
-                    }
-                    throw new RuntimeException("Java compilation failed:\n" + compileErr.toString());
+                // Compile: javac -d bin src/<...>/<Class>.java
+                ProcResult compileRes = runProcess(new ProcessBuilder(
+                        "javac", "-d", outDir.getAbsolutePath(), codeFile.getAbsolutePath()
+                ).directory(tempDir));
+                if (compileRes.exitCode != 0) {
+                    throw new RuntimeException("Java compilation failed:\n" + compileRes.output);
                 }
 
-                // Build run command
+                // Run: java -cp bin <FQCN> [args...]
                 List<String> runCmd = new ArrayList<>();
                 runCmd.add("java");
                 runCmd.add("-cp");
-                runCmd.add(tempDir.getAbsolutePath());
-                runCmd.add(className);
+                runCmd.add(outDir.getAbsolutePath());
+                runCmd.add(info.fqcn());             // package.Class or Class
                 runCmd.addAll(argList);
 
-                // Run
-                ProcessBuilder runPb = new ProcessBuilder(runCmd);
-                runPb.directory(tempDir);
-                runPb.redirectErrorStream(true);
-                Process runProcess = runPb.start();
-
-                // No stdin payload needed for CLI arg mode
-
-                BufferedReader reader = new BufferedReader(new InputStreamReader(runProcess.getInputStream()));
-                StringBuilder outputBuilder = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    outputBuilder.append(line).append("\n");
-                }
-                int exitCode = runProcess.waitFor();
-                output = outputBuilder.toString().trim();
-
-                if (exitCode != 0) {
+                ProcResult runRes = runProcess(new ProcessBuilder(runCmd).directory(tempDir));
+                if (runRes.exitCode != 0) {
                     status = "FAILED";
-                    error = output;
-                    output = null;
+                    error = runRes.output;
+                } else {
+                    output = runRes.output;
                 }
             }
-            // PYTHON
             else if ("python".equals(runtime)) {
-                codeFile = File.createTempFile("decrypted_", ".py");
+                codeFile = File.createTempFile("flexifaas_", ".py");
                 try (FileOutputStream fos = new FileOutputStream(codeFile)) {
                     fos.write(decryptedBytes);
                 }
@@ -153,30 +148,16 @@ public class FunctionExecutionConsumer {
                 cmd.add(codeFile.getAbsolutePath());
                 cmd.addAll(argList);
 
-                ProcessBuilder pb = new ProcessBuilder(cmd);
-                pb.redirectErrorStream(true);
-                Process process = pb.start();
-
-                // No stdin payload needed
-
-                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                StringBuilder outputBuilder = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    outputBuilder.append(line).append("\n");
-                }
-                int exitCode = process.waitFor();
-                output = outputBuilder.toString().trim();
-
-                if (exitCode != 0) {
+                ProcResult res = runProcess(new ProcessBuilder(cmd));
+                if (res.exitCode != 0) {
                     status = "FAILED";
-                    error = output;
-                    output = null;
+                    error = res.output;
+                } else {
+                    output = res.output;
                 }
             }
-            // JS
-            else if ("js".equals(runtime) || "javascript".equals(runtime)) {
-                codeFile = File.createTempFile("decrypted_", ".js");
+            else if ("javascript".equals(runtime)) {
+                codeFile = File.createTempFile("flexifaas_", ".js");
                 try (FileOutputStream fos = new FileOutputStream(codeFile)) {
                     fos.write(decryptedBytes);
                 }
@@ -187,39 +168,30 @@ public class FunctionExecutionConsumer {
                 cmd.add(codeFile.getAbsolutePath());
                 cmd.addAll(argList);
 
-                ProcessBuilder pb = new ProcessBuilder(cmd);
-                pb.redirectErrorStream(true);
-                Process process = pb.start();
-
-                // No stdin payload needed
-
-                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                StringBuilder outputBuilder = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    outputBuilder.append(line).append("\n");
-                }
-                int exitCode = process.waitFor();
-                output = outputBuilder.toString().trim();
-
-                if (exitCode != 0) {
+                ProcResult res = runProcess(new ProcessBuilder(cmd));
+                if (res.exitCode != 0) {
                     status = "FAILED";
-                    error = output;
-                    output = null;
+                    error = res.output;
+                } else {
+                    output = res.output;
                 }
-            } else {
-                throw new IllegalArgumentException("Unsupported runtime: " + runtime);
+            }
+            else {
+                throw new IllegalArgumentException("Unsupported runtime: " + runtimeRaw);
             }
 
         } catch (Exception e) {
             status = "ERROR";
             error = e.getMessage();
         } finally {
-            if (codeFile != null) codeFile.delete();
-            if (tempDir != null) tempDir.delete();
+            // Best-effort cleanup
+            safeDelete(codeFile);
+            safeDeleteDir(outDir);
+            safeDeleteDir(srcDir);
+            safeDeleteDir(tempDir);
         }
 
-        // Save execution log
+        // ---------- Save execution log ----------
         if (function != null && user != null) {
             ExecutionLog log = new ExecutionLog();
             log.setFunction(function);
@@ -230,6 +202,102 @@ public class FunctionExecutionConsumer {
             log.setErrorMessage(error);
             log.setExecutionTime(execTime);
             executionLogRepository.save(log);
+        }
+    }
+
+    // =========================================================
+    // Helpers
+    // =========================================================
+
+    private static byte[] robustDecrypt(File encryptedFile) throws Exception {
+        List<String> errors = new ArrayList<>();
+        // 1) Try normal binary file decryption first
+        try {
+            return MiddlewareCryptoClient.decryptFile(encryptedFile);
+        } catch (Exception e1) {
+            errors.add("binary:" + e1.getMessage());
+            // 2) Fallback for base64-wrapped text uploads
+            try {
+                return MiddlewareCryptoClient.decryptTextFileAsCode(encryptedFile);
+            } catch (Exception e2) {
+                errors.add("text:" + e2.getMessage());
+                throw new RuntimeException("Decryption failed (tried binary then text): " + String.join(" | ", errors));
+            }
+        }
+    }
+
+    private static String normalizeRuntime(String runtimeRaw) {
+        if (runtimeRaw == null) return "unknown";
+        // Accept variants like "java17", "python3.10", "nodejs18", etc.
+        if (runtimeRaw.startsWith("java")) return "java";
+        if (runtimeRaw.startsWith("python")) return "python";
+        if (runtimeRaw.startsWith("node") || runtimeRaw.equals("js") || runtimeRaw.equals("javascript"))
+            return "javascript";
+        return runtimeRaw;
+    }
+
+    private static class JavaClassInfo {
+        final String packageName; // may be null
+        final String className;   // never null if parsed
+        JavaClassInfo(String pkg, String cls) { this.packageName = pkg; this.className = cls; }
+        String fqcn() { return (packageName == null || packageName.isEmpty()) ? className : packageName + "." + className; }
+    }
+
+    private static JavaClassInfo extractJavaClassInfo(String source) {
+        // package com.example.demo;
+        Pattern pkgPat = Pattern.compile("\\bpackage\\s+([a-zA-Z_][\\w\\.]*);");
+        Matcher pkgM = pkgPat.matcher(source);
+        String pkg = null;
+        if (pkgM.find()) {
+            pkg = pkgM.group(1);
+        }
+
+        // public class HelloWorld { ... }
+        Pattern clsPat = Pattern.compile("\\bpublic\\s+class\\s+([A-Za-z_][A-Za-z0-9_]*)\\b");
+        Matcher clsM = clsPat.matcher(source);
+        String cls = null;
+        if (clsM.find()) {
+            cls = clsM.group(1);
+        }
+        return new JavaClassInfo(pkg, cls);
+    }
+
+    private static class ProcResult {
+        final int exitCode;
+        final String output;
+        ProcResult(int exitCode, String output) { this.exitCode = exitCode; this.output = output; }
+    }
+
+    private static ProcResult runProcess(ProcessBuilder pb) throws IOException, InterruptedException {
+        pb.redirectErrorStream(true);
+        Process p = pb.start();
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append('\n');
+            }
+        }
+        int exit = p.waitFor();
+        return new ProcResult(exit, sb.toString().trim());
+    }
+
+    private static void safeDelete(File f) {
+        if (f != null) {
+            try { f.delete(); } catch (Exception ignored) {}
+        }
+    }
+
+    private static void safeDeleteDir(File dir) {
+        if (dir != null && dir.exists()) {
+            File[] files = dir.listFiles();
+            if (files != null) {
+                for (File child : files) {
+                    if (child.isDirectory()) safeDeleteDir(child);
+                    else safeDelete(child);
+                }
+            }
+            safeDelete(dir);
         }
     }
 }
