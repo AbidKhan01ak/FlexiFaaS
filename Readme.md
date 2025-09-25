@@ -48,6 +48,9 @@ The project is built as part of **M.Tech Final Year Dissertation** at **BITS Pil
 (Add actual screenshots in `docs/screenshots/` folder)
 
 - Login & Registration
+  ![](./docs/screenshots/registration.png)
+  ![](./docs/screenshots/login.png)
+  ![](./docs/screenshots/login2.png)
 - Function Upload Page
 - Execution History & Logs
 - Admin Dashboard
